@@ -9,12 +9,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const volPercent = document.getElementById('volPercent');
   const favBtn = document.getElementById('favBtn');
 
+  // Get audio source from URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const audioSrc = decodeURIComponent(urlParams.get('audio') || '');
+  audio.src = audioSrc || '';
+
   // Player related
   if (audio) {
     // Initialize volume from slider or default
     const initialVolume = volSlider ? parseFloat(volSlider.value) : 0.8;
     audio.volume = initialVolume;
     if (volPercent) volPercent.textContent = Math.round(initialVolume * 100) + "%";
+
+    // Attempt to load metadata and handle autoplay
+    audio.onloadedmetadata = () => {
+      if (total) total.textContent = formatTime(audio.duration);
+      if (audio.src && !audio.paused) {
+        audio.play().catch(err => {
+          console.warn("Autoplay blocked:", err);
+          playBtn.textContent = "⏵"; // Ensure play button is ready
+        });
+      }
+    };
 
     audio.ontimeupdate = () => {
       if (!isNaN(audio.duration)) {
@@ -35,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.togglePlay = function() {
       if (audio.paused) {
-        audio.play().catch(()=>{});
+        audio.play().catch(() => {});
       } else {
         audio.pause();
       }
