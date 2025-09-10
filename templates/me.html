@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Profile</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="app-header">🎶 My Music Profile</header>
+  <main>
+    <h2>User: {{ uid }}</h2>
+    <h3>Favorites:</h3>
+    <ul>
+      {% for f in favs %}
+        <li>{{ f }}</li>
+      {% endfor %}
+    </ul>
+    <h3>Recent Plays:</h3>
+    <ul>
+      {% for p in plays %}
+        <li>{{ p }}</li>
+      {% endfor %}
+    </ul>
+  </main>
+  <footer>
+    <a href="/room" class="nav-btn">Room</a>
+    <a href="/me?uid={{ uid }}" class="nav-btn">Me</a>
+  </footer>
+</body>
+</html>
