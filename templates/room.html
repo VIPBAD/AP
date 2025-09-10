@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ song.title }}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="app-header">🎶 ALEXA-MUSIC</header>
+  <main class="room">
+    <img src="{{ song.cover }}" class="cover">
+    <h2>{{ song.title }}</h2>
+    <p>{{ song.artist }}</p>
+
+    <audio controls>
+      <source src="{{ song.url }}" type="audio/mpeg">
+    </audio>
+
+    <div class="actions">
+      <button onclick="markPlay()">▶️ Play</button>
+      <button onclick="markFav()">❤️ Favorite</button>
+    </div>
+  </main>
+  <footer>
+    <a href="/room" class="nav-btn">Room</a>
+    <a href="/me?uid=guest" class="nav-btn">Me</a>
+  </footer>
+
+<script>
+function markPlay() {
+  fetch("/play", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({uid:"guest", song:"{{ song.title }}"})
+  })
+}
+function markFav() {
+  fetch("/favorite", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({uid:"guest", song:"{{ song.title }}"})
+  })
+}
+</script>
+</body>
+</html>
