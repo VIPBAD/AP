@@ -7,12 +7,13 @@ init_db()
 
 @app.route("/")
 def home():
-    # url param leke room.html render karega
+    # Optional audio URL from query parameter
     url = request.args.get("url", "")
     return render_template("room.html", url=url)
 
 @app.route("/stream")
 def stream_audio():
+    # Local audio file path (not typically used in online deployment)
     filepath = request.args.get("path")
     if not filepath or not os.path.isfile(filepath):
         return "Invalid or missing file", 404
