@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Music Room</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body class="mobile dark">
   <!-- Header -->
@@ -12,7 +12,7 @@
 
   <!-- User Profile -->
   <section class="user-profile">
-    <img id="profile-pic" width="60" style="border-radius:50%" alt="Profile Picture">
+    <img id="profile-pic" width="60" style="border-radius:50%" alt="Profile Picture" />
     <div>
       <h3 id="profile-name"></h3>
       <p id="profile-username"></p>
@@ -23,7 +23,7 @@
   <main class="player-screen">
     <h2>Now Playing</h2>
     <div class="album-wrap">
-      <img id="player-thumb" class="album-large" src="https://via.placeholder.com/280" alt="Album">
+      <img id="player-thumb" class="album-large" src="https://via.placeholder.com/280" alt="Album" />
     </div>
     <div class="track-info">
       <div class="track-title" id="title">Unknown Song</div>
@@ -32,7 +32,7 @@
 
     <div class="progress">
       <span id="current">0:00</span>
-      <input id="seek" type="range" min="0" max="100" value="0">
+      <input id="seek" type="range" min="0" max="100" value="0" />
       <span id="total">0:00</span>
     </div>
 
@@ -45,14 +45,15 @@
     <div class="volume-row">
       <div class="volume-control">
         <div style="font-size:14px;color:var(--muted)">Vol</div>
-        <input type="range" id="volume" min="0" max="1" step="0.05" value="0.8">
+        <input type="range" id="volume" min="0" max="1" step="0.05" value="0.8" />
         <span id="volPercent">80%</span>
       </div>
-      <button id="favBtn" class="circle" onclick="toggleFav()">♡</button>
+      <button id="favBtn" class="circle" data-fav="false" onclick="toggleFav()">♡</button>
       <button id="repeatBtn" class="circle" onclick="toggleRepeat()">↻</button>
     </div>
 
-    <audio id="audio" preload="auto" src="{{ url }}" autoplay></audio>
+    <!-- DON'T set autoplay here (blocked by many browsers). We'll set src from params below. -->
+    <audio id="audio" preload="auto"></audio>
   </main>
 
   <!-- Navigation -->
@@ -63,9 +64,11 @@
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="/static/script.js"></script>
+
   <script>
-    const tg = window.Telegram.WebApp;
-    const user = tg.initDataUnsafe?.user;
+    // Telegram init (if running inside Telegram WebApp)
+    const tg = window.Telegram?.WebApp;
+    const user = tg?.initDataUnsafe?.user;
 
     if (user) {
       document.getElementById("profile-pic").src = user.photo_url || "https://via.placeholder.com/60";
@@ -73,39 +76,126 @@
       document.getElementById("profile-username").innerText = "@" + (user.username || "No username");
     }
 
-    // Override toggleFav to integrate with backend
+    // Safe toggleFav override for this page (uses data-fav instead of text content)
     window.toggleFav = async function() {
       const audio = document.getElementById('audio');
       const favBtn = document.getElementById('favBtn');
+      if (!audio || !favBtn) return;
       const item = {
-        title: document.getElementById('title').textContent,
-        artist: document.getElementById('artist').textContent,
-        audio: audio.src,
-        thumb: document.getElementById('player-thumb').src
+        title: document.getElementById('title')?.textContent || '',
+        artist: document.getElementById('artist')?.textContent || '',
+        audio: audio.src || '',
+        thumb: document.getElementById('player-thumb')?.src || ''
       };
-      const isFav = favBtn.textContent === "❤️";
-      if (isFav) {
-        await fetch('/api/favorites', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ audio: item.audio })
-        });
-        favBtn.textContent = "♡";
-      } else {
-        await fetch('/favorite', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uid: user?.id || "guest", song: item.audio })
-        });
-        favBtn.textContent = "❤️";
+      const isFav = favBtn.dataset.fav === "true";
+      try {
+        if (isFav) {
+          await fetch('/api/favorites', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ audio: item.audio })
+          });
+          favBtn.dataset.fav = "false";
+          favBtn.textContent = "♡";
+        } else {
+          await fetch('/favorite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: user?.id || "guest", song: item.audio })
+          });
+          favBtn.dataset.fav = "true";
+          favBtn.textContent = "❤️";
+        }
+      } catch (err) {
+        console.error('Favorite API error', err);
+        alert('Could not update favorites (check console).');
       }
     };
 
-    // Initialize track info if provided
-    const urlParams = new URLSearchParams(window.location.search);
-    document.getElementById('title').textContent = urlParams.get('title') || "Unknown Song";
-    document.getElementById('artist').textContent = urlParams.get('artist') || "Unknown Artist";
-    document.getElementById('player-thumb').src = urlParams.get('thumb') || "https://via.placeholder.com/280";
+    // simple repeat toggle
+    window.toggleRepeat = function() {
+      const audio = document.getElementById('audio');
+      const btn = document.getElementById('repeatBtn');
+      if (!audio || !btn) return;
+      audio.loop = !audio.loop;
+      btn.style.opacity = audio.loop ? '1' : '0.6';
+    };
+
+    // Initialize track info from URL params (or template values)
+    (function initFromParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      // Use decodeURIComponent for safety if the URL param is encoded
+      const titleParam = urlParams.get('title');
+      const artistParam = urlParams.get('artist');
+      const thumbParam = urlParams.get('thumb');
+      const audioParam = urlParams.get('audio');
+
+      if (titleParam) document.getElementById('title').textContent = decodeURIComponent(titleParam);
+      if (artistParam) document.getElementById('artist').textContent = decodeURIComponent(artistParam);
+      if (thumbParam) document.getElementById('player-thumb').src = decodeURIComponent(thumbParam);
+
+      // Set audio src carefully
+      const audioEl = document.getElementById('audio');
+      // Two possible sources: server-side template value "{{ url }}" or URL param. Prefer URL param if present.
+      let src = '';
+      try {
+        if (audioParam) {
+          src = decodeURIComponent(audioParam);
+        } else {
+          // try template placeholder (if server injects)
+          const tpl = "{{ url }}";
+          if (tpl && tpl !== "{{ url }}") {
+            src = tpl;
+          }
+        }
+      } catch (e) {
+        console.warn('Error decoding audio param', e);
+      }
+
+      if (src) {
+        audioEl.src = src;
+        audioEl.load();
+        // Try auto-play but handle rejection gracefully:
+        audioEl.play().then(() => {
+          console.log('Playback started automatically');
+          document.getElementById('playBtn').textContent = '⏸';
+        }).catch((err) => {
+          // autoplay blocked — user must press play. Log to console so you can debug.
+          console.warn('Autoplay prevented or failed; user must press play. See error:', err);
+          document.getElementById('playBtn').textContent = '⏵';
+        });
+      } else {
+        console.warn('No audio source found. Confirm ?audio= URL param or server template variable.');
+      }
+    })();
+
+    // Small helper to expose rewind/forward/togglePlay (if script.js didn't create them)
+    // If your script.js already defines these, these won't override because window functions are shared.
+    window.rewind = window.rewind || function() {
+      const a = document.getElementById('audio');
+      if (!a) return;
+      try { a.currentTime = Math.max(0, a.currentTime - 10); } catch {}
+    };
+    window.forward = window.forward || function() {
+      const a = document.getElementById('audio');
+      if (!a) return;
+      try { a.currentTime = Math.min(a.duration || 0, a.currentTime + 10); } catch {}
+    };
+    window.togglePlay = window.togglePlay || function() {
+      const a = document.getElementById('audio');
+      const btn = document.getElementById('playBtn');
+      if (!a || !btn) return;
+      if (a.paused) {
+        a.play().catch(err => console.warn('Play blocked:', err));
+        btn.textContent = '⏸';
+      } else {
+        a.pause();
+        btn.textContent = '⏵';
+      }
+    };
+
+    // Debugging tip: print current audio src so you can inspect it in Network tab
+    console.log('Audio element src at init:', document.getElementById('audio').src);
   </script>
 </body>
 </html>
