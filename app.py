@@ -7,7 +7,7 @@ app = Flask(__name__)
 def home():
     # Accept either "url" or "audio" query param for backward compatibility
     url = request.args.get("url", "") or request.args.get("audio", "")
-    return render_template("room.html", url=url)
+    return render_template("home.html", url=url)
     
 
 @app.route("/player")
