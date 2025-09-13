@@ -1,55 +1,76 @@
-# db.py
 import sqlite3
+from typing import List, Tuple, Dict
 
 DB_FILE = "music.db"
 
+
+def _connect():
+    return sqlite3.connect(DB_FILE)
+
+
 def init_db():
-    conn = sqlite3.connect(DB_FILE)
+    conn = _connect()
     c = conn.cursor()
+    # plays: keep simple (user_id, song)
     c.execute('''CREATE TABLE IF NOT EXISTS plays
                  (user_id TEXT, song TEXT)''')
+    # favorites: store metadata so the client can render titles/thumbs
     c.execute('''CREATE TABLE IF NOT EXISTS favorites
-                 (user_id TEXT, song TEXT, title TEXT, artist TEXT, thumb TEXT)''')
+                 (user_id TEXT, title TEXT, artist TEXT, audio TEXT, thumb TEXT)''')
     conn.commit()
     conn.close()
 
-def add_play(user_id, song):
-    conn = sqlite3.connect(DB_FILE)
+
+def add_play(user_id: str, song: str):
+    conn = _connect()
     c = conn.cursor()
-    c.execute("INSERT INTO plays VALUES (?,?,?)", (user_id, song, None) if False else (user_id, song))
-    # simpler existing table: (user_id, song)
+    c.execute("INSERT INTO plays VALUES (?,?,?)", (user_id, song, None)) if False else None
+    # simpler insert
+    c.execute("INSERT INTO plays (user_id, song) VALUES (?, ?)", (user_id, song))
     conn.commit()
     conn.close()
 
-def add_favorite(user_id, song, title=None, artist=None, thumb=None):
-    conn = sqlite3.connect(DB_FILE)
+
+def add_favorite(user_id: str, title: str = None, artist: str = None, audio: str = None, thumb: str = None):
+    conn = _connect()
     c = conn.cursor()
-    c.execute("INSERT INTO favorites (user_id, song, title, artist, thumb) VALUES (?,?,?,?,?)",
-              (user_id, song, title or "", artist or "", thumb or ""))
+    c.execute(
+        "INSERT INTO favorites (user_id, title, artist, audio, thumb) VALUES (?, ?, ?, ?, ?)",
+        (user_id, title, artist, audio, thumb),
+    )
     conn.commit()
     conn.close()
 
-def remove_favorite(user_id, song):
-    conn = sqlite3.connect(DB_FILE)
+
+def delete_favorite(user_id: str, audio: str) -> bool:
+    conn = _connect()
     c = conn.cursor()
-    c.execute("DELETE FROM favorites WHERE user_id=? AND song=?", (user_id, song))
+    c.execute("DELETE FROM favorites WHERE user_id=? AND audio=?", (user_id, audio))
+    changed = c.rowcount
     conn.commit()
     conn.close()
+    return changed > 0
 
-def get_user_data(user_id):
-    conn = sqlite3.connect(DB_FILE)
+
+def get_user_data(user_id: str) -> Tuple[List[str], List[Dict]]:
+    conn = _connect()
     c = conn.cursor()
     c.execute("SELECT song FROM plays WHERE user_id=?", (user_id,))
     plays = [row[0] for row in c.fetchall()]
-    c.execute("SELECT song FROM favorites WHERE user_id=?", (user_id,))
-    favs = [row[0] for row in c.fetchall()]
+    c.execute("SELECT title, artist, audio, thumb FROM favorites WHERE user_id=?", (user_id,))
+    favs = [
+        {"title": row[0], "artist": row[1], "audio": row[2], "thumb": row[3]} for row in c.fetchall()
+    ]
     conn.close()
     return plays, favs
 
-def get_all_favorites():
-    conn = sqlite3.connect(DB_FILE)
+
+def get_favorites_for_user(user_id: str):
+    conn = _connect()
     c = conn.cursor()
-    c.execute("SELECT title, artist, song, thumb FROM favorites")
-    rows = c.fetchall()
+    c.execute("SELECT title, artist, audio, thumb FROM favorites WHERE user_id=?", (user_id,))
+    favs = [
+        {"title": row[0], "artist": row[1], "audio": row[2], "thumb": row[3]} for row in c.fetchall()
+    ]
     conn.close()
-    return [{"title": r[0], "artist": r[1], "audio": r[2], "thumb": r[3]} for r in rows]
+    return favs
