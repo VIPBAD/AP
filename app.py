@@ -1,23 +1,35 @@
 import os
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, url_for, redirect
+import yt_dlp
+import logging
+import glob
+import random
+import json
 
 app = Flask(__name__)
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+
 @app.route("/")
 def home():
-    # Read params from URL
+    audio_url = request.args.get("audio", "")
+    title = request.args.get("title", "Telegram Music")
+    thumb = request.args.get("thumb", url_for('static', filename='img/default_album.png'))
+    avatar = request.args.get("avatar", url_for('static', filename='img/avatar.png'))
+    return render_template("home.html", audio_url=audio_url, title=title, thumb=thumb, avatar=avatar)
+
+@app.route("/player")
+def player():
     audio_url = request.args.get("audio", "")
     title = request.args.get("title", "Unknown Title")
-    thumb = request.args.get("thumb", "")
+    thumb = request.args.get("thumb", url_for('static', filename='img/default_album.png'))
+    artist = request.args.get("artist", "YouTube")
+    return render_template("player.html", audio_url=audio_url, title=title, thumb=thumb, artist=artist)
 
-    return render_template(
-        "index.html",
-        audio_url=audio_url,
-        title=title,
-        thumb=thumb
-    )
 
 if __name__ == "__main__":
-    # Dynamic port for Render
-    PORT = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=PORT)
+    PORT = int(os.environ.get("PORT", 5050))
+    app.run(host="0.0.0.0", port=PORT, debug=True)
