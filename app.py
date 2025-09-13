@@ -23,7 +23,7 @@ def home():
 def me():
     uid = request.args.get("uid", "guest")
     plays, favs = db.get_user_data(uid)
-    return render_template("Profile.html", uid=uid, plays=plays, favs=favs)
+    return render_template("profile.html", uid=uid, plays=plays, favs=favs)
 
 @app.route("/chat")
 def chat():
