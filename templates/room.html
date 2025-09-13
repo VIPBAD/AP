@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Music Room</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="mobile dark">
+  <header class="app-header">🎶 BAD MUSIC</header>
+
+  <section class="user-profile">
+    <img id="profile-pic" width="60" style="border-radius:50%" alt="Profile Picture" src="https://via.placeholder.com/60" />
+    <div>
+      <h3 id="profile-name">Guest</h3>
+      <p id="profile-userid">@guest</p>
+    </div>
+  </section>
+
+  <main class="player-screen">
+    <h2>Now Playing</h2>
+    <div class="album-wrap">
+      <img id="player-thumb" class="album-large" src="{{ thumb or 'https://via.placeholder.com/280' }}" alt="Album" />
+    </div>
+
+    <div class="track-info">
+      <div class="track-title" id="title">{{ title or 'Unknown Song' }}</div>
+      <div class="track-artist" id="artist">{{ artist or 'Unknown Artist' }}</div>
+    </div>
+
+    <div class="progress">
+      <span id="current">0:00</span>
+      <input id="seek" type="range" min="0" max="100" value="0" />
+      <span id="total">0:00</span>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl" onclick="rewind()">⏮</button>
+      <button id="playBtn" class="play-prim" onclick="togglePlay()">⏵</button>
+      <button class="ctrl" onclick="forward()">⏭</button>
+    </div>
+
+    <div class="volume-row">
+      <div class="volume-control">
+        <div style="font-size:14px;color:var(--muted)">Vol</div>
+        <input type="range" id="volume" min="0" max="1" step="0.05" value="0.8" />
+        <span id="volPercent">80%</span>
+      </div>
+      <button id="favBtn" class="circle" data-fav="false" onclick="toggleFav()">♡</button>
+      <button id="repeatBtn" class="circle" onclick="toggleRepeat()">↻</button>
+    </div>
+
+    <!-- audio element; src may be injected from template or URL param -->
+    <audio id="audio" preload="auto" src="{{ audio or '' }}"></audio>
+  </main>
+
+  <footer class="bottom-nav elevated">
+    <a href="/" class="nav-item"><span>🏠</span>Room</a>
+    <a href="/me?uid=guest" class="nav-item"><span>👤</span>Me</a>
+  </footer>
+
+  <script src="/static/script.js"></script>
+  <script>
+    // local page-specific helpers
+    window.toggleRepeat = function() {
+      const audio = document.getElementById('audio');
+      const btn = document.getElementById('repeatBtn');
+      if (!audio || !btn) return;
+      audio.loop = !audio.loop;
+      btn.style.opacity = audio.loop ? '1' : '0.6';
+    };
+
+    // try autoplay but fail gracefully
+    (function tryAutoplay() {
+      const audioEl = document.getElementById('audio');
+      if (!audioEl || !audioEl.src) return;
+      audioEl.play().then(() => {
+        document.getElementById('playBtn').textContent = '⏸';
+      }).catch(() => {
+        document.getElementById('playBtn').textContent = '⏵';
+      });
+    })();
+  </script>
+</body>
+</html>
