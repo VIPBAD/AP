@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Music Chat</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    body { background:#0d0f11; color:#fff; font-family:Arial; margin:0; }
+    header { text-align:center; padding:16px; font-size:18px; font-weight:bold; background:#111; }
+    #chat-box { height:400px; overflow-y:scroll; border:1px solid #333; margin:10px; padding:10px; border-radius:10px; }
+    .msg { margin:5px 0; }
+    .user { font-weight:bold; color:#6ea5ff; }
+    .input-row { display:flex; padding:10px; }
+    .input-row input { flex:1; padding:10px; border-radius:8px; border:none; }
+    .input-row button { padding:10px 16px; margin-left:8px; border:none; border-radius:8px; background:#6ea5ff; color:#fff; font-weight:bold; }
+  </style>
+</head>
+<body>
+  <header>🎶 BAD MUSIC Chat Room</header>
+
+  <div id="chat-box"></div>
+
+  <div class="input-row">
+    <input id="msg" placeholder="Type a message...">
+    <button onclick="sendMsg()">Send</button>
+  </div>
+
+<script>
+const socket = io();
+
+// Get Telegram user info
+const tg = window.Telegram?.WebApp;
+const user = tg?.initDataUnsafe?.user || {id:"guest", first_name:"Guest", photo_url:"https://via.placeholder.com/60"};
+
+// Join room
+socket.emit("join", {uid:user.id, name:user.first_name, photo:user.photo_url});
+
+// Receive chat
+socket.on("chat", (data)=>{
+  const box = document.getElementById("chat-box");
+  box.innerHTML += `<div class="msg"><span class="user">${data.name}:</span> ${data.text}</div>`;
+  box.scrollTop = box.scrollHeight;
+});
+
+function sendMsg(){
+  const msg = document.getElementById("msg").value;
+  if(msg.trim()){
+    socket.emit("chat", {uid:user.id, name:user.first_name, text:msg});
+    document.getElementById("msg").value="";
+  }
+}
+</script>
+</body>
+</html>
