@@ -79,6 +79,10 @@
     .list li:last-child {
       border-bottom: none;
     }
+    .list a {
+      color: inherit;
+      text-decoration: none;
+    }
     footer {
       text-align: center;
       padding: 20px;
@@ -123,7 +127,13 @@
     <ul class="list">
       {% if favs %}
         {% for f in favs %}
-          <li><a href="/?audio={{ f }}">{{ f }}</a></li>
+          <li style="display:flex;gap:10px;align-items:center;">
+            <img src="{{ f.thumb or url_for('static', filename='img/default_album.png') }}" width="48" style="border-radius:8px" />
+            <a href="/?audio={{ f.audio | urlencode }}&title={{ f.title | urlencode }}&artist={{ f.artist | urlencode }}">
+              <div style="font-weight:600">{{ f.title }}</div>
+              <div style="color:#9aa0a6;font-size:13px">{{ f.artist }}</div>
+            </a>
+          </li>
         {% endfor %}
       {% else %}
         <li>No favorites yet</li>
@@ -137,7 +147,13 @@
     <ul class="list">
       {% if plays %}
         {% for p in plays %}
-          <li><a href="/?audio={{ p }}">{{ p }}</a></li>
+          <li style="display:flex;gap:10px;align-items:center;">
+            <img src="{{ p.thumb or url_for('static', filename='img/default_album.png') }}" width="48" style="border-radius:8px" />
+            <a href="/?audio={{ p.audio | urlencode }}&title={{ p.title | urlencode }}&artist={{ p.artist | urlencode }}">
+              <div style="font-weight:600">{{ p.title }}</div>
+              <div style="color:#9aa0a6;font-size:13px">{{ p.artist }}</div>
+            </a>
+          </li>
         {% endfor %}
       {% else %}
         <li>No recent plays</li>
@@ -151,17 +167,16 @@
     <a href="/me?uid={{ uid }}" class="nav-btn">👤 Me</a>
   </footer>
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script>
-const tg = window.Telegram?.WebApp;
-const user = tg?.initDataUnsafe?.user;
-
-if (user) {
-  document.getElementById("profile-pic").src = user.photo_url || "https://via.placeholder.com/72";
-  document.getElementById("profile-name").innerText = user.first_name + (user.last_name ? " " + user.last_name : "");
-  document.getElementById("profile-username").innerText = "@" + (user.username || "No username");
-  document.getElementById("profile-id").innerText = user.id;
-}
-</script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const tg = window.Telegram?.WebApp;
+    const user = tg?.initDataUnsafe?.user;
+    if (user) {
+      document.getElementById("profile-pic").src = user.photo_url || "https://via.placeholder.com/72";
+      document.getElementById("profile-name").innerText = user.first_name + (user.last_name ? " " + user.last_name : "");
+      document.getElementById("profile-username").innerText = "@" + (user.username || "No username");
+      document.getElementById("profile-id").innerText = user.id;
+    }
+  </script>
 </body>
 </html>
