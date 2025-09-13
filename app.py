@@ -5,11 +5,10 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    audio_url = request.args.get("audio", "")
-    title = request.args.get("title", "Telegram Music")
-    thumb = request.args.get("thumb", url_for('static', filename='img/default_album.png'))
-    avatar = request.args.get("avatar", url_for('static', filename='img/avatar.png'))
-    return render_template("home.html", audio_url=audio_url, title=title, thumb=thumb, avatar=avatar)
+    # Accept either "url" or "audio" query param for backward compatibility
+    url = request.args.get("url", "") or request.args.get("audio", "")
+    return render_template("room.html", url=url)
+    
 
 @app.route("/player")
 def player():
