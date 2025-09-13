@@ -6,11 +6,11 @@
   <title>{{ title }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    body { background: linear-gradient(135deg, #2b0036, #0f1113); color:#fff; font-family: Inter, sans-serif; }
+    body { background: linear-gradient(135deg, #2b0036, #0f1113); color:#fff; font-family: Inter, sans-serif; margin:0; }
     .app-header { display:flex; justify-content:space-between; align-items:center; padding:12px 18px; font-size:18px; font-weight:700; }
     .listeners { font-size:13px; color:#aaa; }
     .album-wrap { margin:20px auto; position:relative; width:260px; height:260px; border-radius:50%; padding:12px;
-      background:conic-gradient(#ff6ea5 0% {{ progress }}%, #333 {{ progress }}% 100%); }
+      background:conic-gradient(#ff6ea5 0% {{ progress|default(0) }}%, #333 {{ progress|default(0) }}% 100%); }
     .album-wrap img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
     .track-info { text-align:center; margin-top:12px; }
     .track-title { font-size:18px; font-weight:700; }
@@ -18,20 +18,24 @@
     .listeners-row { display:flex; justify-content:center; gap:6px; margin:12px 0; }
     .listeners-row img { width:32px; height:32px; border-radius:50%; border:2px solid #444; }
     .queue-btn { margin:16px auto; padding:12px 24px; background:linear-gradient(90deg,#6ea5ff,#a66bff); border:none; border-radius:12px; color:#fff; font-weight:600; cursor:pointer; display:block; }
-    .queue-modal { display:none; position:fixed; left:0; right:0; bottom:0; top:0; background:rgba(0,0,0,.8); }
+    .queue-modal { display:none; position:fixed; left:0; right:0; bottom:0; top:0; background:rgba(0,0,0,.8); z-index:10; }
     .queue-box { background:#222; margin:60px auto; max-width:400px; border-radius:16px; padding:16px; }
     .queue-item { display:flex; align-items:center; gap:12px; margin:8px 0; }
     .queue-item img { width:48px; height:48px; border-radius:8px; }
     footer { position:fixed; bottom:0; left:0; right:0; background:#111; display:flex; justify-content:space-around; padding:12px 0; }
     footer a { text-decoration:none; color:#aaa; font-size:16px; }
+    .controls button { background:none; border:none; color:#fff; font-size:24px; margin:0 12px; cursor:pointer; }
+    .play-prim { width:70px; height:70px; border-radius:50%; font-size:28px; background:#6ea5ff; color:white; border:none; cursor:pointer; }
   </style>
 </head>
 <body>
+  <!-- Header -->
   <header class="app-header">
     <div>🎶 BAD MUSIC</div>
     <div class="listeners"><span id="listenerCount">0</span> listeners</div>
   </header>
 
+  <!-- Player -->
   <main class="player-screen">
     <div class="album-wrap">
       <img id="player-thumb" src="{{ thumb }}" alt="Album">
@@ -51,9 +55,9 @@
     </div>
 
     <div class="controls">
-      <button class="ctrl" onclick="rewind()">⏮</button>
+      <button onclick="rewind()">⏮</button>
       <button id="playBtn" class="play-prim" onclick="togglePlay()">⏵</button>
-      <button class="ctrl" onclick="forward()">⏭</button>
+      <button onclick="forward()">⏭</button>
     </div>
 
     <div class="volume-row">
@@ -76,23 +80,29 @@
     </div>
   </div>
 
+  <!-- Footer -->
   <footer>
     <a href="/"><span>🏠 Room</span></a>
     <a href="/me?uid=guest"><span>👤 Me</span></a>
   </footer>
 
+  <!-- Scripts -->
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <script>
+    // --- Listeners ---
     async function loadListeners() {
-      const res = await fetch("/listeners");
-      const data = await res.json();
-      document.getElementById("listenerCount").textContent = data.count;
-      const row = document.getElementById("listenersRow");
-      row.innerHTML = data.users.map(u => `<img src="${u.photo_url}">`).join('');
+      try {
+        const res = await fetch("/listeners");
+        const data = await res.json();
+        document.getElementById("listenerCount").textContent = data.count;
+        const row = document.getElementById("listenersRow");
+        row.innerHTML = data.users.map(u => `<img src="${u.photo}" title="${u.name}">`).join('');
+      } catch(e){ console.warn("listeners error", e); }
     }
     setInterval(loadListeners, 5000);
     loadListeners();
 
+    // --- Queue ---
     async function openQueue() {
       const res = await fetch("/queue");
       const q = await res.json();
@@ -103,7 +113,6 @@
             <div>${it.title}</div>
             <div style="color:#aaa;font-size:12px">${it.artist}</div>
           </div>
-          <div style="margin-left:auto;font-size:12px">${it.duration}</div>
         </div>`).join('');
       document.getElementById("queueModal").style.display="block";
     }
