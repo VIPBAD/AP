@@ -13,7 +13,9 @@
     .user { font-weight:bold; color:#6ea5ff; }
     .input-row { display:flex; padding:10px; }
     .input-row input { flex:1; padding:10px; border-radius:8px; border:none; }
-    .input-row button { padding:10px 16px; margin-left:8px; border:none; border-radius:8px; background:#6ea5ff; color:#fff; font-weight:bold; }
+    .input-row button { padding:10px 16px; margin-left:8px; border:none; border-radius:8px; background:#6ea5ff; color:#fff; font-weight:bold; cursor:pointer; }
+    footer { position:fixed; bottom:0; left:0; right:0; background:#111; display:flex; justify-content:space-around; padding:12px 0; }
+    footer a { text-decoration:none; color:#aaa; font-size:16px; }
   </style>
 </head>
 <body>
@@ -25,6 +27,13 @@
     <input id="msg" placeholder="Type a message...">
     <button onclick="sendMsg()">Send</button>
   </div>
+
+  <!-- Footer -->
+  <footer>
+    <a href="/">🏠 Room</a>
+    <a href="/me?uid=guest">👤 Me</a>
+    <a href="/chat">💬 Chat</a>
+  </footer>
 
 <script>
 const socket = io();
