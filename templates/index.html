@@ -8,15 +8,7 @@
 </head>
 <body>
   <div class="container fade-in">
-    <!-- ✅ User Profile section -->
-    <section class="user-profile">
-      <img id="profile-pic" width="60" style="border-radius:50%" alt="Profile Picture" />
-      <div>
-        <h3 id="profile-name">Guest</h3>
-        <p id="profile-userid">ID: guest</p>
-        <p id="profile-username" style="color:#ccc;font-size:12px">@guest</p>
-      </div>
-    </section>
+    <button class="join-btn">🎧 Join Music Player</button>
 
     <div class="player-card bounce">
       <img id="thumb" class="album-img" src="" alt="Thumbnail">
@@ -41,11 +33,10 @@
         <button onclick="endPlayer()">End</button>
       </div>
 
-      <audio id="audio" preload="auto"></audio>
+      <audio id="audio" preload="auto" controls></audio>
     </div>
   </div>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
