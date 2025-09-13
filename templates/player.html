@@ -2,17 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{{ title }}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Music Room</title>
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body class="mobile dark">
+  <!-- Header -->
+  <header class="app-header">🎶 BAD MUSIC</header>
 
-  <main class="player-screen">
-    <div class="album-wrap">
-      <img id="player-thumb" class="album-large" src="{{ thumb }}" alt="Album">
+  <!-- User Profile -->
+  <section class="user-profile">
+    <img id="profile-pic" width="60" style="border-radius:50%" alt="Profile Picture" />
+    <div>
+      <h3 id="profile-name"></h3>
+      <p id="profile-username"></p>
     </div>
+  </section>
 
+  <!-- Song Player -->
+  <main class="player-screen">
+    <h2>Now Playing</h2>
+    <div class="album-wrap">
+      <img id="player-thumb" class="album-large" src="{{ thumb }}" alt="Album" />
+    </div>
     <div class="track-info">
       <div class="track-title" id="title">{{ title }}</div>
       <div class="track-artist" id="artist">{{ artist }}</div>
@@ -25,18 +37,51 @@
     </div>
 
     <div class="controls">
+      <button class="ctrl" onclick="rewind()">⏮</button>
       <button id="playBtn" class="play-prim" onclick="togglePlay()">⏵</button>
+      <button class="ctrl" onclick="forward()">⏭</button>
     </div>
 
-    <!-- Volume -->
     <div class="volume-row">
-      <div style="font-size:14px;color:var(--muted)">Vol</div>
-      <input type="range" id="volume" min="0" max="1" step="0.05" value="1" oninput="setVolume(this.value)">
+      <div class="volume-control">
+        <div style="font-size:14px;color:var(--muted)">Vol</div>
+        <input type="range" id="volume" min="0" max="1" step="0.05" value="0.8" />
+        <span id="volPercent">80%</span>
+      </div>
+      <button id="favBtn" class="circle" data-fav="false" onclick="markFav()">♡</button>
+      <button id="repeatBtn" class="circle" onclick="toggleRepeat()">↻</button>
     </div>
 
     <audio id="audio" preload="auto" src="{{ audio_url }}"></audio>
   </main>
 
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <!-- Navigation -->
+  <footer class="bottom-nav elevated">
+    <a href="/?audio={{ audio_url }}" class="nav-item"><span>🏠</span>Room</a>
+    <a href="/me?uid=guest" class="nav-item"><span>👤</span>Me</a>
+  </footer>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="/static/script.js"></script>
+  <script>
+    const tg = window.Telegram?.WebApp;
+    const user = tg?.initDataUnsafe?.user;
+    if (user) {
+      document.getElementById("profile-pic").src = user.photo_url || "https://via.placeholder.com/60";
+      document.getElementById("profile-name").innerText = user.first_name + (user.last_name ? " " + user.last_name : "");
+      document.getElementById("profile-username").innerText = "@" + (user.username || "No username");
+    }
+
+    function markFav() {
+      fetch("/favorite", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({uid: user?.id || "guest", song: "{{ audio_url }}"})
+      });
+      const btn = document.getElementById("favBtn");
+      btn.textContent = btn.dataset.fav === "true" ? "♡" : "❤️";
+      btn.dataset.fav = btn.dataset.fav === "true" ? "false" : "true";
+    }
+  </script>
 </body>
 </html>
