@@ -1,259 +1,100 @@
-// script.js (fixed and cleaned)
+const urlParams = new URLSearchParams(window.location.search);
+const audioSrc = decodeURIComponent(urlParams.get('audio') || '');
+const thumb = decodeURIComponent(urlParams.get('thumb') || '');
+const title = decodeURIComponent(urlParams.get('title') || 'Unknown Title');
 
-document.addEventListener('DOMContentLoaded', () => {
-  const audio = document.getElementById('audio');
-  const seek = document.getElementById('seek');
-  const current = document.getElementById('current');
-  const total = document.getElementById('total');
-  const playBtn = document.getElementById('playBtn');
-  const volSlider = document.getElementById('volume');
-  const volPercent = document.getElementById('volPercent');
-  const favBtn = document.getElementById('favBtn');
+const audio = document.getElementById('audio');
+const seek = document.getElementById('seek');
+const currentTime = document.getElementById('current');
+const totalTime = document.getElementById('total');
+const favBtn = document.getElementById('favBtn');
 
-  // helper
-  const getElText = (id) => document.getElementById(id)?.textContent || '';
+let stopped = false;
 
-  // parse URL params once
-  const urlParams = new URLSearchParams(window.location.search);
+document.getElementById('thumb').src = thumb || 'default-thumbnail.jpg';
+document.getElementById('title').innerText = title;
+document.getElementById('artist').innerText = 'Now Playing...';
 
-  // If there's an audio element, wire up player behavior
-  if (audio) {
-    // prefer `audio` param
-    try {
-      const audioParam = urlParams.get('audio');
-      const audioSrc = audioParam ? decodeURIComponent(audioParam) : '';
-      if (audioSrc) {
-        audio.src = audioSrc;
-      }
+audio.src = audioSrc || '';
+audio.preload = 'metadata';
+audio.controls = false; // Removed default controls to use custom ones
+audio.loop = false;
 
-      // load optional metadata
-      const titleParam = urlParams.get('title');
-      const artistParam = urlParams.get('artist');
-      const thumbParam = urlParams.get('thumb');
-      if (titleParam && document.getElementById('title')) {
-        document.getElementById('title').textContent = decodeURIComponent(titleParam);
-      }
-      if (artistParam && document.getElementById('artist')) {
-        document.getElementById('artist').textContent = decodeURIComponent(artistParam);
-      }
-      if (thumbParam && document.getElementById('player-thumb')) {
-        document.getElementById('player-thumb').src = decodeURIComponent(thumbParam);
-      }
-
-      audio.load();
-    } catch (err) {
-      console.warn('Error parsing audio URL param', err);
-    }
-
-    // Initialize volume
-    const initialVolume = volSlider ? parseFloat(volSlider.value) || 0.8 : 0.8;
-    audio.volume = initialVolume;
-    if (volPercent) volPercent.textContent = Math.round(initialVolume * 100) + "%";
-
-    function updatePlayButton() {
-      if (!playBtn) return;
-      playBtn.textContent = audio.paused ? "⏵" : "⏸";
-    }
-    updatePlayButton();
-
-    function formatTime(seconds) {
-      if (isNaN(seconds)) return "0:00";
-      const mins = Math.floor(seconds / 60);
-      const secs = Math.floor(seconds % 60);
-      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-    }
-
-    audio.ontimeupdate = () => {
-      if (!isNaN(audio.duration) && audio.duration > 0) {
-        if (seek) seek.value = (audio.currentTime / audio.duration) * 100 || 0;
-        if (current) current.textContent = formatTime(audio.currentTime);
-        if (total) total.textContent = formatTime(audio.duration);
-      } else {
-        if (total) total.textContent = "0:00";
-      }
-      updatePlayButton();
-    };
-
-    if (seek) {
-      seek.addEventListener('input', () => {
-        if (!isNaN(audio.duration) && audio.duration > 0) {
-          audio.currentTime = (seek.value / 100) * audio.duration;
-        }
-      });
-    }
-
-    if (playBtn) {
-      playBtn.addEventListener('click', () => { togglePlay(); });
-    }
-
-    window.togglePlay = function() {
-      if (audio.paused) {
-        audio.play().catch((e) => { console.warn('Play prevented:', e); });
-      } else {
-        audio.pause();
-      }
-      updatePlayButton();
-    };
-
-    window.rewind = function() { try { audio.currentTime = Math.max(0, audio.currentTime - 10); } catch (e) {} };
-    window.forward = function() { try { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10); } catch (e) {} };
-
-    audio.addEventListener('play', updatePlayButton);
-    audio.addEventListener('pause', updatePlayButton);
-    audio.addEventListener('loadedmetadata', () => {
-      if (total) total.textContent = formatTime(audio.duration);
-    });
+audio.addEventListener('loadedmetadata', () => {
+  totalTime.innerText = formatTime(audio.duration);
+  if (audio.duration && !isNaN(audio.duration)) {
+    seek.max = audio.duration;
   }
+  tryAutoPlay();
+});
 
-  // Volume slider behavior
-  if (volSlider && audio) {
-    volSlider.addEventListener('input', (e) => {
-      const v = parseFloat(e.target.value);
-      audio.volume = isNaN(v) ? 0.8 : v;
-      if (volPercent) volPercent.textContent = Math.round(audio.volume * 100) + "%";
-    });
-  }
-
-  // FAVORITES helpers (use the /api/favorites endpoints)
-  async function postFavorite(item) {
-    try {
-      const res = await fetch('/api/favorites?uid=guest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item)
-      });
-      return res.ok;
-    } catch (e) {
-      console.error('Failed to add favorite', e);
-      return false;
-    }
-  }
-
-  async function deleteFavorite(audioUrl) {
-    try {
-      const res = await fetch('/api/favorites?uid=guest', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audio: audioUrl })
-      });
-      return res.ok;
-    } catch (e) {
-      console.error('Failed to delete favorite', e);
-      return false;
-    }
-  }
-
-  window.toggleFav = async function() {
-    if (!audio) return;
-    const item = {
-      uid: 'guest',
-      title: document.getElementById('title')?.textContent || "Unknown",
-      artist: document.getElementById('artist')?.textContent || "",
-      audio: audio.src || "",
-      thumb: document.getElementById('player-thumb')?.src || ""
-    };
-    if (!favBtn) return;
-
-    const isFav = favBtn.dataset.fav === 'true';
-    if (isFav) {
-      favBtn.dataset.fav = 'false';
-      favBtn.textContent = '♡';
-      const ok = await deleteFavorite(item.audio);
-      if (!ok) {
-        favBtn.dataset.fav = 'true';
-        favBtn.textContent = '❤️';
-        alert('Could not remove favorite. Try again.');
-      }
-    } else {
-      favBtn.dataset.fav = 'true';
-      favBtn.textContent = '❤️';
-      const ok = await postFavorite(item);
-      if (!ok) {
-        favBtn.dataset.fav = 'false';
-        favBtn.textContent = '♡';
-        alert('Could not add favorite. Try again.');
-      }
-    }
-  };
-
-  // show favorites on profile page
-  window.showFavorites = async function() {
-    const panel = document.getElementById('favoritesPanel');
-    const list = document.getElementById('favoritesList');
-    if (!panel || !list) return;
-    panel.style.display = 'block';
-    list.innerHTML = '<div style="color:var(--muted);padding:12px">Loading...</div>';
-    try {
-      const res = await fetch('/api/favorites?uid=guest');
-      if (!res.ok) throw new Error('Server returned ' + res.status);
-      const data = await res.json();
-      if (!data || data.length === 0) {
-        list.innerHTML = '<div style="color:var(--muted);padding:12px">No favorites yet</div>';
-        return;
-      }
-      list.innerHTML = data.map(it => {
-        const audioEsc = encodeURIComponent(it.audio || '');
-        const titleEsc = encodeURIComponent(it.title || '');
-        const thumbEsc = encodeURIComponent(it.thumb || '');
-        return `
-          <a class="result-item" href="/?audio=${audioEsc}&title=${titleEsc}&thumb=${thumbEsc}">
-            <img src="${it.thumb || ''}" alt="${escapeHtml(it.title || '')}" />
-            <div class="r-info">
-              <div class="r-title">${escapeHtml(it.title || '')}</div>
-              <div class="r-sub">${escapeHtml(it.artist || '')}</div>
-            </div>
-            <div class="r-actions">
-              <button onclick="removeFavorite(event,'${encodeURIComponent(it.audio || '')}')">Remove</button>
-            </div>
-          </a>
-        `;
-      }).join('');
-    } catch (e) {
-      console.error('Failed to load favorites', e);
-      list.innerHTML = '<div style="color:var(--muted);padding:12px">Unable to load favorites</div>';
-    }
-  };
-
-  window.removeFavorite = async function(evt, audioEncoded) {
-    try {
-      evt && evt.stopPropagation();
-      const audioUrl = decodeURIComponent(audioEncoded || '');
-      await deleteFavorite(audioUrl);
-      if (typeof window.showFavorites === 'function') {
-        await window.showFavorites();
-      }
-    } catch (e) {
-      console.error('Failed to remove favorite', e);
-    }
-  };
-
-  // settings saved to localStorage
-  const syncRange = document.getElementById('syncRange');
-  const syncValue = document.getElementById('syncValue');
-  const dataSaver = document.getElementById('dataSaver');
-  if (syncRange && syncValue) {
-    const stored = localStorage.getItem('playback_sync') || '5';
-    syncRange.value = stored;
-    syncValue.textContent = stored + 's';
-    syncRange.addEventListener('input', () => {
-      syncValue.textContent = syncRange.value + 's';
-      localStorage.setItem('playback_sync', syncRange.value);
-    });
-  }
-  if (dataSaver) {
-    const saved = localStorage.getItem('data_saver') === 'true';
-    dataSaver.checked = saved;
-    dataSaver.addEventListener('change', () => {
-      localStorage.setItem('data_saver', dataSaver.checked);
-    });
-  }
-
-  function escapeHtml(unsafe) {
-    return String(unsafe)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/\"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+audio.addEventListener('timeupdate', () => {
+  if (!stopped && audio.duration) {
+    seek.value = audio.currentTime;
+    currentTime.innerText = formatTime(audio.currentTime);
   }
 });
+
+seek.addEventListener('input', () => {
+  audio.currentTime = seek.value;
+});
+
+function tryAutoPlay() {
+  if (!stopped && audio.src) {
+    audio.play().catch(err => {
+      console.warn("Autoplay blocked:", err);
+      alert("Please click play to start the audio.");
+    });
+  }
+}
+
+function togglePlay() {
+  if (stopped) {
+    stopped = false;
+    audio.currentTime = 0;
+  }
+  if (audio.paused) {
+    audio.play().catch(err => console.warn("Play error:", err));
+  } else {
+    audio.pause();
+  }
+}
+
+function stopAudio() {
+  audio.pause();
+  audio.currentTime = 0;
+  stopped = true;
+  currentTime.innerText = '0:00';
+  seek.value = 0;
+}
+
+function endPlayer() {
+  stopAudio();
+  alert("🔕 Playback ended. Play a new song from Telegram.");
+}
+
+function rewind() {
+  if (!stopped && audio.currentTime > 10) {
+    audio.currentTime -= 10;
+  } else {
+    audio.currentTime = 0;
+  }
+}
+
+function forward() {
+  if (!stopped && audio.currentTime < audio.duration - 10) {
+    audio.currentTime += 10;
+  } else {
+    audio.currentTime = audio.duration;
+  }
+}
+
+function toggleFav() {
+  favBtn.textContent = favBtn.textContent === '❤️' ? '🤍' : '❤️';
+}
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s < 10 ? '0' + s : s}`;
+}
