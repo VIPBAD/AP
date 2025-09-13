@@ -1,7 +1,7 @@
 body {
-  background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+  background: #121212;
   color: #fff;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: Arial, sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -14,97 +14,51 @@ body {
 }
 
 .player-card {
-  background: #1e2a38;
+  background: #1e1e1e;
   padding: 20px;
-  border-radius: 20px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-  max-width: 350px;
-  margin: auto;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  display: inline-block;
 }
 
 .album-img {
-  width: 100%;
-  max-height: 200px;
-  border-radius: 15px;
-  object-fit: cover;
+  width: 200px;
+  height: 200px;
+  border-radius: 10px;
+  margin-bottom: 10px;
 }
 
 .song-title {
-  font-size: 1.3em;
+  font-size: 18px;
   font-weight: bold;
-  margin-top: 10px;
+  margin: 5px 0;
 }
 
 .artist {
-  font-size: 0.95em;
-  color: #ccc;
+  font-size: 14px;
+  color: #aaa;
   margin-bottom: 15px;
 }
 
 .timebar {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  align-items: center;
+  margin: 10px 0;
 }
 
-input[type="range"] {
-  flex: 1;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 5px;
-  background: #607d8b;
-  outline: none;
-  border-radius: 5px;
+#seek {
+  flex-grow: 1;
+  margin: 0 10px;
 }
 
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 15px;
-  height: 15px;
-  background: #fff;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.controls, .actions {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 15px;
-}
-
-button {
-  padding: 10px;
-  font-size: 1.2em;
-  background-color: #37474f;
-  color: white;
+.controls button, .actions button {
+  margin: 5px;
+  padding: 10px 15px;
   border: none;
-  border-radius: 12px;
-  transition: all 0.3s ease;
+  border-radius: 8px;
   cursor: pointer;
+  font-size: 16px;
+  background: #333;
+  color: #fff;
 }
-
-button:hover {
-  background-color: #607d8b;
-}
-
-/* Animations */
-.fade-in {
-  animation: fadeIn 1.5s ease-in-out;
-}
-.bounce {
-  animation: bounceIn 1s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0 }
-  to { opacity: 1 }
-}
-
-@keyframes bounceIn {
-  0%   { transform: scale(0.9); opacity: 0; }
-  60%  { transform: scale(1.05); opacity: 1; }
-  100% { transform: scale(1); }
-        }
