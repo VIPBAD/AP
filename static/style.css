@@ -1,64 +1,39 @@
 body {
-  background: #121212;
-  color: #fff;
   font-family: Arial, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
-}
-
-.container {
+  background: #1e1e2f;
+  color: #fff;
   text-align: center;
+  margin: 0;
+  padding: 0;
 }
 
-.player-card {
-  background: #1e1e1e;
+.player {
+  margin: 50px auto;
   padding: 20px;
+  background: #2d2d44;
   border-radius: 15px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-  display: inline-block;
+  width: 400px;
+  box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
 }
 
-.album-img {
-  width: 200px;
-  height: 200px;
-  border-radius: 10px;
-  margin-bottom: 10px;
-}
-
-.song-title {
-  font-size: 18px;
-  font-weight: bold;
-  margin: 5px 0;
-}
-
-.artist {
-  font-size: 14px;
-  color: #aaa;
-  margin-bottom: 15px;
-}
-
-.timebar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+input[type="text"] {
+  width: 70%;
+  padding: 8px;
   margin: 10px 0;
+  border-radius: 8px;
+  border: none;
 }
 
-#seek {
-  flex-grow: 1;
-  margin: 0 10px;
-}
-
-.controls button, .actions button {
-  margin: 5px;
+button {
   padding: 10px 15px;
+  margin: 5px;
   border: none;
   border-radius: 8px;
+  background: #4cafef;
+  color: white;
   cursor: pointer;
-  font-size: 16px;
-  background: #333;
-  color: #fff;
+}
+
+button:hover {
+  background: #3a9edb;
 }
