@@ -1,5 +1,5 @@
-// script.js
-// Shared client script: player controls, volume, favorites, settings
+// script.js (fixed and cleaned)
+
 document.addEventListener('DOMContentLoaded', () => {
   const audio = document.getElementById('audio');
   const seek = document.getElementById('seek');
@@ -10,60 +10,59 @@ document.addEventListener('DOMContentLoaded', () => {
   const volPercent = document.getElementById('volPercent');
   const favBtn = document.getElementById('favBtn');
 
-  // helper: safe get element text
+  // helper
   const getElText = (id) => document.getElementById(id)?.textContent || '';
+
+  // parse URL params once
+  const urlParams = new URLSearchParams(window.location.search);
 
   // If there's an audio element, wire up player behavior
   if (audio) {
-    // If URL has audio param, use it (user suggested)
+    // prefer `audio` param
     try {
-      const urlParams = new URLSearchParams(window.location.search);
       const audioParam = urlParams.get('audio');
       const audioSrc = audioParam ? decodeURIComponent(audioParam) : '';
       if (audioSrc) {
         audio.src = audioSrc;
-        // If there are title/thumb params, update UI if present
-        const titleParam = urlParams.get('title');
-        if (titleParam && document.getElementById('title')) {
-          document.getElementById('title').textContent = decodeURIComponent(titleParam);
-        }
-        const thumbParam = urlParams.get('thumb');
-        if (thumbParam && document.getElementById('player-thumb')) {
-          document.getElementById('player-thumb').src = decodeURIComponent(thumbParam);
-        }
-        // Load the new source
-        audio.load();
       }
+
+      // load optional metadata
+      const titleParam = urlParams.get('title');
+      const artistParam = urlParams.get('artist');
+      const thumbParam = urlParams.get('thumb');
+      if (titleParam && document.getElementById('title')) {
+        document.getElementById('title').textContent = decodeURIComponent(titleParam);
+      }
+      if (artistParam && document.getElementById('artist')) {
+        document.getElementById('artist').textContent = decodeURIComponent(artistParam);
+      }
+      if (thumbParam && document.getElementById('player-thumb')) {
+        document.getElementById('player-thumb').src = decodeURIComponent(thumbParam);
+      }
+
+      audio.load();
     } catch (err) {
-      // ignore malformed URL params
       console.warn('Error parsing audio URL param', err);
     }
 
-    // Initialize volume from slider or default 0.8
+    // Initialize volume
     const initialVolume = volSlider ? parseFloat(volSlider.value) || 0.8 : 0.8;
     audio.volume = initialVolume;
     if (volPercent) volPercent.textContent = Math.round(initialVolume * 100) + "%";
 
-    // Update play button state (initial)
     function updatePlayButton() {
       if (!playBtn) return;
       playBtn.textContent = audio.paused ? "⏵" : "⏸";
-      // store a clearer state for favorites checks
-      if (favBtn) {
-        // keep existing fav appearance — nothing changes here
-      }
     }
     updatePlayButton();
 
-    // Format time helper
     function formatTime(seconds) {
       if (isNaN(seconds)) return "0:00";
       const mins = Math.floor(seconds / 60);
       const secs = Math.floor(seconds % 60);
-      return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
 
-    // ontimeupdate: update UI
     audio.ontimeupdate = () => {
       if (!isNaN(audio.duration) && audio.duration > 0) {
         if (seek) seek.value = (audio.currentTime / audio.duration) * 100 || 0;
@@ -75,7 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
       updatePlayButton();
     };
 
-    // seek control
     if (seek) {
       seek.addEventListener('input', () => {
         if (!isNaN(audio.duration) && audio.duration > 0) {
@@ -84,45 +82,28 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Attach play button (if present)
     if (playBtn) {
-      playBtn.addEventListener('click', () => {
-        togglePlay();
-      });
+      playBtn.addEventListener('click', () => { togglePlay(); });
     }
 
-    // Global controls
     window.togglePlay = function() {
       if (audio.paused) {
-        audio.play().catch((e) => {
-          // Autoplay may be blocked by browser — fail silently
-          console.warn('Play prevented:', e);
-        });
+        audio.play().catch((e) => { console.warn('Play prevented:', e); });
       } else {
         audio.pause();
       }
       updatePlayButton();
     };
 
-    window.rewind = function() {
-      try {
-        audio.currentTime = Math.max(0, audio.currentTime - 10);
-      } catch (e) { /* ignore if not seekable */ }
-    };
+    window.rewind = function() { try { audio.currentTime = Math.max(0, audio.currentTime - 10); } catch (e) {} };
+    window.forward = function() { try { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10); } catch (e) {} };
 
-    window.forward = function() {
-      try {
-        audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
-      } catch (e) { /* ignore if not seekable */ }
-    };
-
-    // try to update button when playback state changes outside our controls
     audio.addEventListener('play', updatePlayButton);
     audio.addEventListener('pause', updatePlayButton);
     audio.addEventListener('loadedmetadata', () => {
       if (total) total.textContent = formatTime(audio.duration);
     });
-  } // end if(audio)
+  }
 
   // Volume slider behavior
   if (volSlider && audio) {
@@ -133,14 +114,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // FAVORITES
-  // Use data-fav attribute to track state instead of text content
+  // FAVORITES helpers (use the /api/favorites endpoints)
   async function postFavorite(item) {
     try {
-      const res = await fetch('/api/favorites', {
+      const res = await fetch('/api/favorites?uid=guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ item })
+        body: JSON.stringify(item)
       });
       return res.ok;
     } catch (e) {
@@ -148,9 +128,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return false;
     }
   }
+
   async function deleteFavorite(audioUrl) {
     try {
-      const res = await fetch('/api/favorites', {
+      const res = await fetch('/api/favorites?uid=guest', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ audio: audioUrl })
@@ -165,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.toggleFav = async function() {
     if (!audio) return;
     const item = {
+      uid: 'guest',
       title: document.getElementById('title')?.textContent || "Unknown",
       artist: document.getElementById('artist')?.textContent || "",
       audio: audio.src || "",
@@ -173,49 +155,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!favBtn) return;
 
     const isFav = favBtn.dataset.fav === 'true';
-    // optimistic UI
     if (isFav) {
       favBtn.dataset.fav = 'false';
-      favBtn.textContent = "♡";
+      favBtn.textContent = '♡';
       const ok = await deleteFavorite(item.audio);
       if (!ok) {
-        // revert on failure
         favBtn.dataset.fav = 'true';
-        favBtn.textContent = "❤️";
+        favBtn.textContent = '❤️';
         alert('Could not remove favorite. Try again.');
       }
     } else {
       favBtn.dataset.fav = 'true';
-      favBtn.textContent = "❤️";
+      favBtn.textContent = '❤️';
       const ok = await postFavorite(item);
       if (!ok) {
-        // revert on failure
         favBtn.dataset.fav = 'false';
-        favBtn.textContent = "♡";
+        favBtn.textContent = '♡';
         alert('Could not add favorite. Try again.');
       }
     }
   };
 
-  // Add favorite from search result (used by search.html)
-  window.addFavoriteFromSearch = async function(evt, title, artist, audioUrl, thumb) {
-    try {
-      evt && evt.stopPropagation();
-      evt && evt.preventDefault && evt.preventDefault();
-      const item = { title, artist, audio: audioUrl, thumb };
-      const ok = await postFavorite(item);
-      if (ok) {
-        alert("Added to favorites");
-      } else {
-        alert("Failed to add favorite");
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Failed to add favorite");
-    }
-  };
-
-  // Profile page: show favorites from server or initialFavorites
+  // show favorites on profile page
   window.showFavorites = async function() {
     const panel = document.getElementById('favoritesPanel');
     const list = document.getElementById('favoritesList');
@@ -223,28 +184,29 @@ document.addEventListener('DOMContentLoaded', () => {
     panel.style.display = 'block';
     list.innerHTML = '<div style="color:var(--muted);padding:12px">Loading...</div>';
     try {
-      const res = await fetch('/api/favorites');
+      const res = await fetch('/api/favorites?uid=guest');
       if (!res.ok) throw new Error('Server returned ' + res.status);
       const data = await res.json();
       if (!data || data.length === 0) {
         list.innerHTML = '<div style="color:var(--muted);padding:12px">No favorites yet</div>';
         return;
       }
-      // build HTML safely using template strings
       list.innerHTML = data.map(it => {
         const audioEsc = encodeURIComponent(it.audio || '');
         const titleEsc = encodeURIComponent(it.title || '');
         const thumbEsc = encodeURIComponent(it.thumb || '');
-        return `<a class="result-item" href="/player?audio=${audioEsc}&title=${titleEsc}&thumb=${thumbEsc}">
-                  <img src="${it.thumb || ''}" alt="${it.title || ''}" />
-                  <div class="r-info">
-                    <div class="r-title">${escapeHtml(it.title || '')}</div>
-                    <div class="r-sub">${escapeHtml(it.artist || '')}</div>
-                  </div>
-                  <div class="r-actions">
-                    <button onclick="removeFavorite(event,'${encodeURIComponent(it.audio || '')}')">Remove</button>
-                  </div>
-                </a>`;
+        return `
+          <a class="result-item" href="/?audio=${audioEsc}&title=${titleEsc}&thumb=${thumbEsc}">
+            <img src="${it.thumb || ''}" alt="${escapeHtml(it.title || '')}" />
+            <div class="r-info">
+              <div class="r-title">${escapeHtml(it.title || '')}</div>
+              <div class="r-sub">${escapeHtml(it.artist || '')}</div>
+            </div>
+            <div class="r-actions">
+              <button onclick="removeFavorite(event,'${encodeURIComponent(it.audio || '')}')">Remove</button>
+            </div>
+          </a>
+        `;
       }).join('');
     } catch (e) {
       console.error('Failed to load favorites', e);
@@ -252,13 +214,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // removeFavorite expects encoded audio param
   window.removeFavorite = async function(evt, audioEncoded) {
     try {
       evt && evt.stopPropagation();
       const audioUrl = decodeURIComponent(audioEncoded || '');
       await deleteFavorite(audioUrl);
-      // refresh the list (call the function defined above)
       if (typeof window.showFavorites === 'function') {
         await window.showFavorites();
       }
@@ -267,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Settings: load/save playback sync and data saver in localStorage
+  // settings saved to localStorage
   const syncRange = document.getElementById('syncRange');
   const syncValue = document.getElementById('syncValue');
   const dataSaver = document.getElementById('dataSaver');
@@ -288,14 +248,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // small helper to avoid XSS when injecting title/artist into innerHTML
   function escapeHtml(unsafe) {
     return String(unsafe)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
+      .replace(/\"/g, "&quot;")
       .replace(/'/g, "&#039;");
   }
 });
-        
