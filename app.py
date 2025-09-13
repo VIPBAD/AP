@@ -23,11 +23,15 @@ def home():
 def me():
     uid = request.args.get("uid", "guest")
     plays, favs = db.get_user_data(uid)
-    return render_template("profile.html", uid=uid, plays=plays, favs=favs)
+    return render_template("Profile.html", uid=uid, plays=plays, favs=favs)
 
 @app.route("/chat")
 def chat():
     return render_template("chatting.html")
+
+@app.route("/join")
+def join():
+    return render_template("join.html")
 
 @app.route("/listeners")
 def get_listeners():
@@ -50,6 +54,11 @@ def mark_fav():
     if song:
         db.add_favorite(uid, song)
     return jsonify({"status": "ok"})
+
+@app.route("/queue")
+def get_queue():
+    q = db.get_queue()
+    return jsonify(q)
 
 # ---------- SOCKET.IO EVENTS ----------
 
