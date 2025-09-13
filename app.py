@@ -1,23 +1,23 @@
 import os
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, send_file
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    # Read params from URL
-    audio_url = request.args.get("audio", "")
-    title = request.args.get("title", "Unknown Title")
-    thumb = request.args.get("thumb", "")
+    # Optional audio URL from query parameter
+    url = request.args.get("url", "")
+    return render_template("index.html", url=url)
 
-    return render_template(
-        "player.html",
-        audio_url=audio_url,
-        title=title,
-        thumb=thumb
-    )
+@app.route("/stream")
+def stream_audio():
+    # Local audio file path (not typically used in online deployment)
+    filepath = request.args.get("path")
+    if not filepath or not os.path.isfile(filepath):
+        return "Invalid or missing file", 404
+    return send_file(filepath, mimetype="audio/mpeg")
 
 if __name__ == "__main__":
-    # Dynamic port for Render
+    # Use dynamic port for Render hosting
     PORT = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=PORT)
