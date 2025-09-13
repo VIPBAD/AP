@@ -1,39 +1,47 @@
 body {
+  margin: 0;
   font-family: Arial, sans-serif;
-  background: #1e1e2f;
+  background: #0f1113;
   color: #fff;
   text-align: center;
-  margin: 0;
-  padding: 0;
 }
 
-.player {
-  margin: 50px auto;
-  padding: 20px;
-  background: #2d2d44;
-  border-radius: 15px;
-  width: 400px;
-  box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+.player-screen { padding: 20px; }
+
+.album-large {
+  width: 250px;
+  height: 250px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
 
-input[type="text"] {
-  width: 70%;
-  padding: 8px;
-  margin: 10px 0;
-  border-radius: 8px;
-  border: none;
+.track-title { font-size: 20px; font-weight: bold; margin-top: 10px; }
+.track-artist { color: #aaa; margin-top: 4px; }
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px;
+}
+.progress input[type="range"] {
+  flex: 1;
 }
 
-button {
-  padding: 10px 15px;
-  margin: 5px;
-  border: none;
-  border-radius: 8px;
-  background: #4cafef;
+.controls { margin: 20px; }
+.play-prim {
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  font-size: 28px;
+  background: #6ea5ff;
   color: white;
-  cursor: pointer;
+  border: none;
 }
 
-button:hover {
-  background: #3a9edb;
+.volume-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
