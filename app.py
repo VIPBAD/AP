@@ -3,12 +3,6 @@ from flask import Flask, request, render_template, url_for
 
 app = Flask(__name__)
 
-@app.route("/")
-def home():
-    # Accept either "url" or "audio" query param for backward compatibility
-    url = request.args.get("url", "") or request.args.get("audio", "")
-    return render_template("home.html", url=url)
-    
 
 @app.route("/player")
 def player():
