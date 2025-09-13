@@ -1,9 +1,15 @@
 import os
 from flask import Flask, request, render_template, jsonify, url_for
+from flask_socketio import SocketIO, emit
 import db
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
+
 db.init_db()
+
+# In-memory listeners
+listeners = {}
 
 @app.route("/")
 def home():
@@ -19,11 +25,19 @@ def me():
     plays, favs = db.get_user_data(uid)
     return render_template("profile.html", uid=uid, plays=plays, favs=favs)
 
+@app.route("/chat")
+def chat():
+    return render_template("chatting.html")
+
+@app.route("/listeners")
+def get_listeners():
+    return jsonify({"count": len(listeners), "users": list(listeners.values())})
+
 @app.route("/play", methods=["POST"])
 def mark_play():
     data = request.get_json()
     uid = data.get("uid", "guest")
-    song = data.get("song", {})
+    song = data.get("song", "")
     if song:
         db.add_play(uid, song)
     return jsonify({"status": "ok"})
@@ -32,38 +46,34 @@ def mark_play():
 def mark_fav():
     data = request.get_json()
     uid = data.get("uid", "guest")
-    song = data.get("song", {})
+    song = data.get("song", "")
     if song:
         db.add_favorite(uid, song)
     return jsonify({"status": "ok"})
 
-# --- Queue routes ---
-@app.route("/queue", methods=["GET"])
-def queue():
-    return jsonify(db.get_queue())
+# ---------- SOCKET.IO EVENTS ----------
 
-@app.route("/next", methods=["GET"])
-def next_song():
-    return jsonify(db.pop_next() or {})
-
-# --- Listener routes ---
-@app.route("/join", methods=["POST"])
-def join():
-    data = request.get_json()
+@socketio.on("join")
+def handle_join(data):
     uid = str(data.get("uid", "guest"))
     name = data.get("name", "Unknown")
-    photo = data.get("photo", url_for('static', filename='img/default_album.png'))
-    db.join_listener(uid, name, photo)
-    return jsonify({"status": "ok"})
+    photo = data.get("photo", "https://via.placeholder.com/60")
+    listeners[uid] = {"name": name, "photo": photo}
+    emit("user_joined", {"uid": uid, "name": name, "photo": photo}, broadcast=True)
 
-@app.route("/listeners", methods=["GET"])
-def listeners():
-    return jsonify(db.get_listeners())
+@socketio.on("leave")
+def handle_leave(data):
+    uid = str(data.get("uid"))
+    if uid in listeners:
+        listeners.pop(uid)
+        emit("user_left", {"uid": uid}, broadcast=True)
 
-@app.route("/joinpage")
-def join_page():
-    return render_template("join.html")
+@socketio.on("chat")
+def handle_chat(data):
+    # Broadcast chat messages to all
+    emit("chat", data, broadcast=True)
+
 
 if __name__ == "__main__":
     PORT = int(os.environ.get("PORT", 5050))
-    app.run(host="0.0.0.0", port=PORT, debug=True)
+    socketio.run(app, host="0.0.0.0", port=PORT, debug=True)
