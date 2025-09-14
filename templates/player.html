@@ -6,134 +6,93 @@
   <title>{{ title }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    body { 
-      margin:0; color:#fff; font-family: Inter, sans-serif; 
+    /* --- layout & bg --- */
+    body {
+      margin:0; color:#fff; font-family:Inter, sans-serif;
       min-height:100vh; display:flex; flex-direction:column; position:relative;
       background: url("https://graph.org/file/307d5dd37cbfb9738b41a-6cf2524b08e006f7bf.jpg") no-repeat center center fixed;
       background-size: cover;
     }
     body::before {
-      content:""; position:absolute; top:0; left:0; right:0; bottom:0;
+      content:""; position:absolute; inset:0;
       background:linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0));
       z-index:0;
     }
-
     .app-header, .player-screen, footer { position:relative; z-index:1; }
-    .app-header { 
-      display:flex; justify-content:space-between; align-items:center;
-      padding:12px 18px; font-size:18px; font-weight:700; 
-      background:rgba(0,0,0,0.3);
-    }
+    .app-header { display:flex; justify-content:space-between; align-items:center; padding:12px 18px; font-size:18px; font-weight:700; background:rgba(0,0,0,0.25); }
     .listeners { font-size:13px; color:#ddd; }
     .player-screen { flex:1; padding-bottom:90px; text-align:center; }
 
-    /* Circular Progress Ring */
-    .album-wrap {
-      margin:20px auto; position:relative;
-      width:280px; height:280px;
-      display:flex; align-items:center; justify-content:center;
-    }
+    /* --- circular album with ring --- */
+    .album-wrap { margin:20px auto; position:relative; width:280px; height:280px; display:flex; align-items:center; justify-content:center; }
     .album-ring {
-      position:absolute; top:0; left:0; right:0; bottom:0;
-      border-radius:50%; padding:8px;
+      position:absolute; inset:0; border-radius:50%; padding:8px;
       background:conic-gradient(#6ea5ff 0deg, #a66bff 0deg, #ff6ea5 0deg, #333 0deg 360deg);
-      display:flex; align-items:center; justify-content:center;
-      transition: background 0.3s linear;
-      overflow:hidden;
+      display:flex; align-items:center; justify-content:center; transition:background .25s linear; overflow:hidden;
     }
-    /* Rainbow Neon Sweep */
     .album-ring::after {
-      content:""; position:absolute; inset:-5px; border-radius:50%;
+      content:""; position:absolute; inset:-6px; border-radius:50%;
       background:conic-gradient(
-        rgba(255,0,0,0.6),
-        rgba(255,165,0,0.6),
-        rgba(255,255,0,0.6),
-        rgba(0,255,0,0.6),
-        rgba(0,255,255,0.6),
-        rgba(0,0,255,0.6),
-        rgba(255,0,255,0.6),
-        rgba(255,0,0,0.6)
+        rgba(255,0,0,0.55),
+        rgba(255,165,0,0.55),
+        rgba(255,255,0,0.55),
+        rgba(0,255,0,0.55),
+        rgba(0,255,255,0.55),
+        rgba(0,0,255,0.55),
+        rgba(255,0,255,0.55),
+        rgba(255,0,0,0.55)
       );
-      filter: blur(14px);
-      opacity:0.7;
+      filter: blur(12px);
+      opacity:0.65;
       animation: rotateSweep 5s linear infinite, hueShift 6s linear infinite;
-      z-index:1;
-      mix-blend-mode:screen;
+      mix-blend-mode:screen; z-index:1;
     }
-    @keyframes rotateSweep {
-      from { transform:rotate(0deg); }
-      to { transform:rotate(360deg); }
-    }
-    @keyframes hueShift {
-      from { filter: blur(14px) hue-rotate(0deg); }
-      to { filter: blur(14px) hue-rotate(360deg); }
-    }
-    .album-wrap img {
-      width:240px; height:240px; border-radius:50%;
-      object-fit:cover; border:6px solid #111; z-index:2;
-    }
+    @keyframes rotateSweep { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes hueShift { from{filter:blur(12px) hue-rotate(0deg)} to{filter:blur(12px) hue-rotate(360deg)} }
 
-    .track-info { margin-top:12px; }
-    .track-title { font-size:18px; font-weight:700; }
-    .track-artist { font-size:14px; color:#ccc; }
-    .listeners-row { display:flex; justify-content:center; gap:6px; margin:12px 0; }
-    .listeners-row img { width:32px; height:32px; border-radius:50%; border:2px solid #444; }
+    .album-wrap img { width:240px; height:240px; border-radius:50%; object-fit:cover; border:6px solid #111; z-index:2; }
 
-    /* Profile Section */
-    .user-profile { 
-      display:flex; align-items:center; gap:12px;
-      margin:20px auto; max-width:320px;
-      background:rgba(0,0,0,0.6); padding:12px 16px; border-radius:12px;
-    }
-    .user-profile img { width:50px; height:50px; border-radius:50%; }
-    .user-profile h3 { margin:0; font-size:16px; }
-    .user-profile p { margin:0; font-size:13px; color:#bbb; }
+    /* --- track info --- */
+    .track-info { margin-top:12px; padding: 0 20px; }
+    .track-title { font-size:18px; font-weight:700; line-height:1.2; }
+    .track-artist { font-size:14px; color:#ccc; margin-top:6px; }
 
-    /* Seek Progress Bar */
-    .progress { display:flex; align-items:center; justify-content:center; gap:10px; margin:15px 0; }
-    .progress input[type=range] {
-      -webkit-appearance:none; width:60%; height:8px; border-radius:8px;
-      background:#444; outline:none;
-    }
-    .progress input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
-      background:#fff; border:2px solid #ff6ea5; cursor:pointer;
-      position:relative; z-index:2;
-    }
+    /* --- seek/controls/volume --- */
+    .progress { display:flex; align-items:center; justify-content:center; gap:12px; margin:14px 0; }
+    .progress span { width:40px; text-align:center; font-size:14px; color:#eee; }
+    input[type=range] { -webkit-appearance:none; width:60%; height:8px; border-radius:8px; background:#444; outline:none; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid #ff6ea5; cursor:pointer; }
+    input[type=range]::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid #ff6ea5; cursor:pointer; }
 
-    .controls { margin:10px 0; }
-    .controls button { margin:0 6px; font-size:20px; background:none; border:none; color:#fff; cursor:pointer; }
-    .fav-btn { font-size:20px; background:none; border:none; cursor:pointer; color:red; }
+    .controls { margin:12px 0; display:flex; justify-content:center; gap:18px; align-items:center; }
+    .controls button{ font-size:22px; background:none; border:none; color:#fff; cursor:pointer; padding:6px; }
+    .play-prim { font-size:28px; width:56px; height:56px; border-radius:28px; background:linear-gradient(90deg,#6ea5ff,#a66bff); color:#111; display:inline-flex; align-items:center; justify-content:center; border:none; cursor:pointer; }
 
-    /* Volume Slider */
-    .volume-row { margin:15px 0; }
-    .volume-row input[type=range] {
-      -webkit-appearance:none; width:60%; height:8px; border-radius:8px;
-      background:#444; outline:none;
-    }
-    .volume-row input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
-      background:#fff; border:2px solid #a66bff; cursor:pointer;
-      position:relative; z-index:2;
-    }
-    .volume-row span { display:block; margin-top:6px; font-size:14px; color:#ddd; }
+    .volume-row{ margin:12px 0; text-align:center; }
+    .volume-row span{ display:block; margin-top:6px; color:#ddd; }
 
-    footer { 
-      position:fixed; bottom:0; left:0; right:0;
-      background:rgba(0,0,0,0.7);
-      display:flex; justify-content:space-around; padding:12px 0;
+    .user-profile { display:flex; align-items:center; gap:12px; margin:18px auto; max-width:320px; background:rgba(0,0,0,0.5); padding:12px 14px; border-radius:12px; }
+    .user-profile img{ width:50px; height:50px; border-radius:50%; }
+    .user-profile h3{ margin:0; font-size:16px; }
+    .user-profile p{ margin:0; color:#bbb; font-size:13px; }
+
+    footer{ position:fixed; bottom:0; left:0; right:0; background:rgba(0,0,0,0.7); display:flex; justify-content:space-around; padding:12px 0; z-index:2; }
+    footer a{ color:#fff; text-decoration:none; font-size:16px; }
+
+    /* small responsiveness */
+    @media (max-width:420px){
+      .album-wrap{ width:220px; height:220px; }
+      .album-wrap img{ width:180px; height:180px; }
+      input[type=range]{ width:70%; }
     }
-    footer a { text-decoration:none; color:#fff; font-size:16px; }
   </style>
 </head>
 <body>
-  <!-- Header -->
   <header class="app-header">
     <div>🎶 BAD MUSIC</div>
     <div class="listeners"><span id="listenerCount">0</span> listeners</div>
   </header>
 
-  <!-- Player -->
   <main class="player-screen">
     <div class="album-wrap">
       <div class="album-ring" id="albumRing"></div>
@@ -147,7 +106,6 @@
 
     <div class="listeners-row" id="listenersRow"></div>
 
-    <!-- Progress Bar -->
     <div class="progress">
       <span id="current">0:00</span>
       <input id="seek" type="range" min="0" max="100" value="0" />
@@ -155,19 +113,17 @@
     </div>
 
     <div class="controls">
-      <button class="ctrl" onclick="rewind()">⏮</button>
-      <button id="playBtn" class="play-prim" onclick="togglePlay()">⏵</button>
-      <button class="ctrl" onclick="forward()">⏭</button>
-      <button id="favBtn" class="fav-btn">❤️</button>
+      <button class="ctrl" id="rewBtn" title="Rewind 10s">⏮</button>
+      <button id="playBtn" class="play-prim" title="Play/Pause">⏵</button>
+      <button class="ctrl" id="fwdBtn" title="Forward 10s">⏭</button>
+      <button id="favBtn" class="ctrl" title="Favorite">❤️</button>
     </div>
 
-    <!-- Volume -->
     <div class="volume-row">
-      <input type="range" id="volume" min="0" max="1" step="0.05" value="0.8" />
+      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" />
       <span id="volPercent">80%</span>
     </div>
 
-    <!-- Profile -->
     <section class="user-profile">
       <img id="profile-pic" src="https://via.placeholder.com/60" alt="Profile">
       <div>
@@ -176,60 +132,161 @@
       </div>
     </section>
 
-    <audio id="audio" preload="auto" src="{{ audio_url }}"></audio>
+    <audio id="audio" preload="metadata" src="{{ audio_url }}"></audio>
   </main>
 
-  <!-- Footer -->
   <footer>
-    <a href="/"><span>🏠 Room</span></a>
-    <a href="/me?uid=guest"><span>👤 Me</span></a>
+    <a href="/">🏠 Room</a>
+    <a href="/me?uid=guest">👤 Me</a>
   </footer>
 
-  <!-- Scripts -->
   <script>
-    const audio = document.getElementById("audio");
-    const seek = document.getElementById("seek");
-    const current = document.getElementById("current");
-    const total = document.getElementById("total");
-    const albumRing = document.getElementById("albumRing");
-    const vol = document.getElementById("volume");
-    const volPercent = document.getElementById("volPercent");
+    // elements
+    const audio = document.getElementById('audio');
+    const playBtn = document.getElementById('playBtn');
+    const seek = document.getElementById('seek');
+    const currentEl = document.getElementById('current');
+    const totalEl = document.getElementById('total');
+    const albumRing = document.getElementById('albumRing');
+    const vol = document.getElementById('volume');
+    const volPercent = document.getElementById('volPercent');
+    const rewBtn = document.getElementById('rewBtn');
+    const fwdBtn = document.getElementById('fwdBtn');
 
-    function fmtTime(sec) {
-      const m = Math.floor(sec/60) || 0;
-      const s = Math.floor(sec%60) || 0;
-      return m + ":" + (s<10?"0":"") + s;
+    // utility time format
+    function fmtTime(sec){
+      if (!isFinite(sec)) return '0:00';
+      const m = Math.floor(sec/60);
+      const s = Math.floor(sec % 60);
+      return m + ':' + (s < 10 ? '0'+s : s);
     }
 
-    audio.addEventListener("loadedmetadata", () => {
+    // update play/pause icon
+    function setPlayIcon(isPlaying){
+      playBtn.textContent = isPlaying ? '⏸' : '▶️;
+    }
+
+    // try play safely (handle autoplay promise)
+    async function safePlay(){
+      try{
+        await audio.play();
+        setPlayIcon(true);
+      }catch(err){
+        // autoplay blocked — mute & try, otherwise wait for user interaction
+        console.warn('play blocked, will try when user interacts', err);
+        audio.muted = true;
+        try { await audio.play(); setPlayIcon(true); audio.muted = false; }
+        catch(e){ setPlayIcon(false); }
+      }
+    }
+
+    // toggle play/pause
+    function togglePlay(){
+      if(audio.paused){
+        safePlay();
+      } else {
+        audio.pause();
+        setPlayIcon(false);
+      }
+    }
+
+    // rewind & forward (10s)
+    function rewind(){ audio.currentTime = Math.max(0, audio.currentTime - 10); }
+    function forward(){ audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10); }
+
+    // connect controls
+    playBtn.addEventListener('click', togglePlay);
+    rewBtn.addEventListener('click', () => { rewind(); updateUI(); });
+    fwdBtn.addEventListener('click', () => { forward(); updateUI(); });
+
+    // when metadata loaded -> set durations
+    audio.addEventListener('loadedmetadata', () => {
       seek.max = Math.floor(audio.duration);
-      total.textContent = fmtTime(audio.duration);
+      totalEl.textContent = fmtTime(audio.duration);
     });
 
-    audio.addEventListener("timeupdate", () => {
-      seek.value = Math.floor(audio.currentTime);
-      current.textContent = fmtTime(audio.currentTime);
-
-      // Circular ring progress
-      const progress = (audio.currentTime / audio.duration) * 360;
-      albumRing.style.background = `conic-gradient(#6ea5ff 0deg ${progress/3}deg, #a66bff ${progress/3}deg ${progress*2/3}deg, #ff6ea5 ${progress*2/3}deg ${progress}deg, #333 ${progress}deg 360deg)`;
-
-      // Seekbar colorful fill
-      const percent = (audio.currentTime / audio.duration) * 100;
-      seek.style.background = `linear-gradient(90deg, #6ea5ff, #a66bff, #ff6ea5 ${percent}%, #444 ${percent}%)`;
-    });
-
-    seek.addEventListener("input", () => { audio.currentTime = seek.value; });
-
-    // Volume gradient fill
-    function updateVolumeUI() {
-      const percent = vol.value * 100;
-      volPercent.textContent = Math.round(percent) + "%";
-      vol.style.background = `linear-gradient(90deg, #6ea5ff, #a66bff, #ff6ea5 ${percent}%, #444 ${percent}%)`;
+    // update UI on timeupdate
+    function updateUI(){
+      // seek/clock
+      seek.value = Math.floor(audio.currentTime || 0);
+      currentEl.textContent = fmtTime(audio.currentTime || 0);
+      // circular ring progress (colorful)
+      if(audio.duration){
+        const progressDeg = (audio.currentTime / audio.duration) * 360;
+        albumRing.style.background = `conic-gradient(#6ea5ff 0deg ${progressDeg/3}deg, #a66bff ${progressDeg/3}deg ${progressDeg*2/3}deg, #ff6ea5 ${progressDeg*2/3}deg ${progressDeg}deg, #333 ${progressDeg}deg 360deg)`;
+        // seek bar colorful fill
+        const pct = (audio.currentTime / audio.duration) * 100;
+        seek.style.background = `linear-gradient(90deg, #6ea5ff, #a66bff, #ff6ea5 ${pct}%, #444 ${pct}%)`;
+      }
     }
+    audio.addEventListener('timeupdate', updateUI);
+
+    // end -> reset icon
+    audio.addEventListener('ended', () => { setPlayIcon(false); });
+
+    // seek input
+    let seeking = false;
+    seek.addEventListener('input', (e) => {
+      seeking = true;
+      const val = +e.target.value;
+      currentEl.textContent = fmtTime(val);
+      // visual fill while dragging
+      const max = +seek.max || 1;
+      const pct = (val / max) * 100;
+      seek.style.background = `linear-gradient(90deg, #6ea5ff, #a66bff, #ff6ea5 ${pct}%, #444 ${pct}%)`;
+    });
+    seek.addEventListener('change', (e) => {
+      audio.currentTime = +e.target.value;
+      seeking = false;
+    });
+
+    // volume handling with animated fill and percent
+    function updateVolumeUI(){
+      const percent = Math.round(vol.value * 100);
+      volPercent.textContent = percent + '%';
+      vol.style.background = `linear-gradient(90deg, #6ea5ff, #a66bff, #ff6ea5 ${percent}%, #444 ${percent}%)`;
+      audio.volume = vol.value;
+    }
+    vol.addEventListener('input', updateVolumeUI);
+    // init volume
     audio.volume = vol.value;
     updateVolumeUI();
-    vol.addEventListener("input", () => { audio.volume = vol.value; updateVolumeUI(); });
+
+    // listeners row loader (same as before)
+    async function loadListeners(){
+      try{
+        const res = await fetch('/listeners');
+        if(!res.ok) return;
+        const data = await res.json();
+        document.getElementById('listenerCount').textContent = data.count || 0;
+        const row = document.getElementById('listenersRow');
+        row.innerHTML = (data.users||[]).map(u => `<img src="${u.photo}" title="${u.name}" style="width:32px;height:32px;border-radius:50%;border:2px solid #444">`).join('');
+      }catch(e){ console.warn('listeners error', e); }
+    }
+    setInterval(loadListeners, 5000);
+    loadListeners();
+
+    // ensure user interaction will unmute/play if blocked earlier
+    // some browsers block unmuted autoplay. This listens for first tap to attempt play.
+    function unlockPlayback(){
+      if(audio.paused){
+        safePlay();
+      } else {
+        // already playing; ensure muted false
+        audio.muted = false;
+      }
+      // remove listeners (one-time)
+      window.removeEventListener('click', unlockPlayback);
+      window.removeEventListener('touchstart', unlockPlayback);
+    }
+    window.addEventListener('click', unlockPlayback, { once:true });
+    window.addEventListener('touchstart', unlockPlayback, { once:true });
+
+    // initialize UI: reflect audio initial state
+    setPlayIcon(!audio.paused && !audio.ended);
+    // If template loaded with audio_url and you want to autoplay try safePlay() here,
+    // but leaving it commented to avoid autoplay blocks:
+    // safePlay();
   </script>
 </body>
 </html>
