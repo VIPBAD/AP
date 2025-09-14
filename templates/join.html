@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Telegram Music</title>
+  <title>{{ title }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     body {
@@ -55,7 +55,11 @@
       <span>🎵</span>
     </div>
     <div class="title">🎶 BAD MUSIC</div>
-    <a href="/" class="join-btn">Join Music</a>
+
+    <!-- FIXED BUTTON -->
+    <a href="{{ url_for('player', audio=audio_url, title=title, thumb=thumb, artist='YouTube') }}" class="join-btn">
+      Join Music
+    </a>
   </main>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </body>
