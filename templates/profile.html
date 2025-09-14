@@ -7,70 +7,102 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     body {
-      background: linear-gradient(180deg, #0d0f11, #131416);
-      color: #fff;
-      font-family: Inter, Arial, sans-serif;
       margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      color: #fff;
+      min-height: 100vh;
+      background: url("https://graph.org/file/307d5dd37cbfb9738b41a-6cf2524b08e006f7bf.jpg") no-repeat center center fixed;
+      background-size: cover;
+      position: relative;
     }
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 0;
+    }
+    .app-header, .profile-card, .stats, .section, footer {
+      position: relative;
+      z-index: 1;
+    }
+
     .app-header {
       text-align: center;
       font-weight: 700;
       padding: 16px;
       font-size: 20px;
+      background: rgba(0,0,0,0.4);
     }
+
     .profile-card {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.08);
       margin: 14px;
       padding: 16px;
       border-radius: 14px;
       display: flex;
       align-items: center;
       gap: 12px;
+      backdrop-filter: blur(8px);
     }
     .profile-card img {
       width: 72px;
       height: 72px;
       border-radius: 50%;
       object-fit: cover;
+      border: 3px solid transparent;
+      background: linear-gradient(45deg, #6ea5ff, #a66bff, #ff6ea5);
+      background-clip: padding-box;
     }
     .profile-info h2 {
       margin: 0;
       font-size: 18px;
+      background: linear-gradient(90deg,#6ea5ff,#a66bff,#ff6ea5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     .profile-info p {
       margin: 4px 0;
-      color: #9aa0a6;
+      color: #ccc;
       font-size: 14px;
     }
+
     .stats {
       display: flex;
       justify-content: space-between;
       padding: 10px 20px;
       margin-top: -10px;
     }
-    .stat { text-align: center; }
+    .stat { text-align: center; flex: 1; }
     .stat .num {
       font-weight: 700;
-      color: #6ea5ff;
-      font-size: 18px;
+      font-size: 20px;
+      background: linear-gradient(90deg,#6ea5ff,#a66bff,#ff6ea5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     .stat .label {
       font-size: 13px;
-      color: #9aa0a6;
+      color: #aaa;
     }
+
     .section {
       margin: 20px;
     }
     .section h3 {
       margin-bottom: 10px;
       font-size: 16px;
+      background: linear-gradient(90deg,#6ea5ff,#a66bff,#ff6ea5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     .list {
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.06);
       border-radius: 12px;
       padding: 10px;
       list-style: none;
       margin: 0;
+      backdrop-filter: blur(6px);
     }
     .list-item {
       display: flex;
@@ -85,10 +117,11 @@
       height: 50px;
       border-radius: 8px;
       object-fit: cover;
+      border: 2px solid transparent;
+      background: linear-gradient(45deg,#6ea5ff,#a66bff,#ff6ea5);
+      background-clip: padding-box;
     }
-    .list-item .info {
-      flex: 1;
-    }
+    .list-item .info { flex: 1; }
     .list-item .info .title {
       font-size: 14px;
       font-weight: 600;
@@ -105,10 +138,11 @@
       align-items: center;
       gap: 10px;
     }
+
     footer {
       text-align: center;
       padding: 20px;
-      background: #111;
+      background: rgba(0,0,0,0.7);
       position: fixed;
       bottom: 0;
       left: 0;
@@ -118,8 +152,10 @@
     }
     footer .nav-btn {
       text-decoration: none;
-      color: #6ea5ff;
       font-weight: 600;
+      background: linear-gradient(90deg,#6ea5ff,#a66bff,#ff6ea5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
   </style>
 </head>
@@ -140,11 +176,11 @@
   <!-- Stats -->
   <div class="stats">
     <div class="stat">
-      <div class="num">{{ favs|length }}</div>
+      <div class="num" id="favCount" data-value="{{ favs|length }}">0</div>
       <div class="label">Favorites</div>
     </div>
     <div class="stat">
-      <div class="num">{{ plays|length }}</div>
+      <div class="num" id="playCount" data-value="{{ plays|length }}">0</div>
       <div class="label">Total plays</div>
     </div>
   </div>
@@ -208,6 +244,25 @@
     document.getElementById("profile-name").innerText = user.first_name + (user.last_name ? " " + user.last_name : "");
     document.getElementById("profile-username").innerText = "@" + (user.username || "No username");
     document.getElementById("profile-id").innerText = user.id;
+
+    // 🔥 Animate counters
+    function animateCounter(id) {
+      const el = document.getElementById(id);
+      const target = +el.dataset.value;
+      let count = 0;
+      const step = Math.ceil(target / 50); // adjust speed
+      const interval = setInterval(() => {
+        count += step;
+        if (count >= target) {
+          count = target;
+          clearInterval(interval);
+        }
+        el.textContent = count;
+      }, 40);
+    }
+
+    animateCounter("favCount");
+    animateCounter("playCount");
   </script>
 </body>
 </html>
