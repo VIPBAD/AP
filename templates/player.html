@@ -62,7 +62,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      transition: background 0.3s linear; /* smooth animation */
+      transition: background 0.3s linear;
     }
     .album-wrap img {
       width:240px; 
@@ -125,14 +125,14 @@
     .controls button { margin:0 6px; font-size:20px; background:none; border:none; color:#fff; cursor:pointer; }
     .fav-btn { font-size:20px; background:none; border:none; cursor:pointer; color:red; }
 
-    /* Volume Slider Gradient */
+    /* Volume Slider Fill */
     .volume-row { margin:15px 0; }
     .volume-row input[type=range] {
       -webkit-appearance:none;
       width:60%;
       height:8px;
       border-radius:8px;
-      background:linear-gradient(90deg, #6ea5ff, #a66bff, #ff6ea5);
+      background:linear-gradient(90deg, #6ea5ff, #a66bff, #ff6ea5) 0% 0% / 0% 100% no-repeat, #444;
       outline:none;
     }
     .volume-row input[type=range]::-webkit-slider-thumb {
@@ -142,6 +142,8 @@
       background:#fff;
       border:2px solid #a66bff;
       cursor:pointer;
+      position:relative;
+      z-index:2;
     }
     .volume-row input[type=range]::-moz-range-thumb {
       width:16px; height:16px;
@@ -243,6 +245,8 @@
     const current = document.getElementById("current");
     const total = document.getElementById("total");
     const albumRing = document.getElementById("albumRing");
+    const vol = document.getElementById("volume");
+    const volPercent = document.getElementById("volPercent");
 
     // Format time
     function fmtTime(sec) {
@@ -270,13 +274,19 @@
       audio.currentTime = seek.value;
     });
 
-    // Volume control
-    const vol = document.getElementById("volume");
-    const volPercent = document.getElementById("volPercent");
+    // Volume control with animated fill
+    function updateVolumeUI() {
+      const percent = vol.value * 100;
+      volPercent.textContent = Math.round(percent) + "%";
+      vol.style.background = `linear-gradient(90deg, #6ea5ff, #a66bff, #ff6ea5 ${percent}%, #444 ${percent}%)`;
+    }
+
     audio.volume = vol.value;
+    updateVolumeUI();
+
     vol.addEventListener("input", () => {
       audio.volume = vol.value;
-      volPercent.textContent = Math.round(vol.value * 100) + "%";
+      updateVolumeUI();
     });
 
     // Load listeners
