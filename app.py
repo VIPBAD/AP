@@ -13,7 +13,10 @@ listeners = {}
 
 @app.route("/")
 def home():
+    # If no audio URL is provided, show join.html
     audio_url = request.args.get("audio", "")
+    if not audio_url:
+        return render_template("join.html")
     title = request.args.get("title", "Now Playing")
     thumb = request.args.get("thumb", url_for('static', filename='img/default_album.png'))
     artist = request.args.get("artist", "Unknown Artist")
@@ -24,14 +27,6 @@ def me():
     uid = request.args.get("uid", "guest")
     plays, favs = db.get_user_data(uid)
     return render_template("profile.html", uid=uid, plays=plays, favs=favs)
-
-@app.route("/chat")
-def chat():
-    return render_template("chatting.html")
-
-@app.route("/join")
-def join():
-    return render_template("join.html")
 
 @app.route("/listeners")
 def get_listeners():
@@ -57,8 +52,10 @@ def mark_fav():
 
 @app.route("/queue")
 def get_queue():
-    q = db.get_queue()
-    return jsonify(q)
+    # Return favorite songs for the queue
+    uid = request.args.get("uid", "guest")
+    _, favs = db.get_user_data(uid)
+    return jsonify(favs)
 
 # ---------- SOCKET.IO EVENTS ----------
 
@@ -76,12 +73,6 @@ def handle_leave(data):
     if uid in listeners:
         listeners.pop(uid)
         emit("user_left", {"uid": uid}, broadcast=True)
-
-@socketio.on("chat")
-def handle_chat(data):
-    # Broadcast chat messages to all
-    emit("chat", data, broadcast=True)
-
 
 if __name__ == "__main__":
     PORT = int(os.environ.get("PORT", 5050))
