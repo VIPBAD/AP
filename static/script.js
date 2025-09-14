@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const volPercent = document.getElementById('volPercent');
   const favBtn = document.getElementById('favBtn');
 
+  // Get Telegram user info
+  const user = window.Telegram?.WebApp?.initDataUnsafe?.user || { id: "guest", first_name: "Guest", photo_url: "https://via.placeholder.com/60" };
+  const socket = io();
+  socket.emit("join", { uid: user.id, name: user.first_name, photo: user.photo_url });
+
   if (audio) {
     audio.volume = volSlider ? parseFloat(volSlider.value) : 0.8;
 
@@ -29,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.togglePlay = function () {
-      if (audio.paused) audio.play().catch(()=>{});
+      if (audio.paused) audio.play().catch(() => {});
       else audio.pause();
       updatePlayButton();
     };
@@ -50,8 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Auto save play
     audio.addEventListener('play', () => {
-      const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      const userId = user?.id || "guest";
       const song = {
         title: document.getElementById('title')?.textContent || "Unknown Song",
         artist: document.getElementById('artist')?.textContent || "Unknown Artist",
@@ -61,9 +64,26 @@ document.addEventListener('DOMContentLoaded', () => {
       fetch("/play", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: userId, song })
+        body: JSON.stringify({ uid: user.id, song })
       });
     });
+
+    // Save favorite
+    if (favBtn) {
+      favBtn.addEventListener('click', () => {
+        const song = {
+          title: document.getElementById('title')?.textContent || "Unknown Song",
+          artist: document.getElementById('artist')?.textContent || "Unknown Artist",
+          audio: audio.src,
+          thumb: document.getElementById('player-thumb')?.src || ""
+        };
+        fetch("/favorite", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid: user.id, song })
+        });
+      });
+    }
 
     // Save lastSong in localStorage
     audio.addEventListener('loadeddata', () => {
@@ -103,4 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (volPercent) volPercent.textContent = Math.round(v * 100) + "%";
     });
   }
+
+  // Handle page unload
+  window.addEventListener('beforeunload', () => {
+    socket.emit("leave", { uid: user.id });
+  });
 });
