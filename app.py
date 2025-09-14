@@ -13,20 +13,27 @@ listeners = {}
 
 @app.route("/")
 def home():
-    # If no audio URL is provided, show join.html
     audio_url = request.args.get("audio", "")
-    if not audio_url:
-        return render_template("join.html")
-    title = request.args.get("title", "Now Playing")
+    title = request.args.get("title", "Telegram Music")
     thumb = request.args.get("thumb", url_for('static', filename='img/default_album.png'))
-    artist = request.args.get("artist", "Unknown Artist")
-    return render_template("player.html", audio_url=audio_url, title=title, thumb=thumb, artist=artist)
+    avatar = request.args.get("avatar", url_for('static', filename='img/avatar.png'))
+    return render_template("home.html", audio_url=audio_url, title=title, thumb=thumb, avatar=avatar)
 
+@app.route("/player")
+def player():
+    audio_url = request.args.get("audio", "")
+    title = request.args.get("title", "Unknown Title")
+    thumb = request.args.get("thumb", url_for('static', filename='img/default_album.png'))
+    artist = request.args.get("artist", "YouTube")
+    return render_template("player.html", audio_url=audio_url, title=title, thumb=thumb, artist=artist)
+    
 @app.route("/me")
 def me():
     uid = request.args.get("uid", "guest")
     plays, favs = db.get_user_data(uid)
     return render_template("profile.html", uid=uid, plays=plays, favs=favs)
+
+
 
 @app.route("/listeners")
 def get_listeners():
@@ -52,20 +59,11 @@ def mark_fav():
 
 @app.route("/queue")
 def get_queue():
-    # Return favorite songs for the queue
-    uid = request.args.get("uid", "guest")
-    _, favs = db.get_user_data(uid)
-    return jsonify(favs)
+    q = db.get_queue()
+    return jsonify(q)
 
 # ---------- SOCKET.IO EVENTS ----------
 
-@socketio.on("join")
-def handle_join(data):
-    uid = str(data.get("uid", "guest"))
-    name = data.get("name", "Unknown")
-    photo = data.get("photo", "https://via.placeholder.com/60")
-    listeners[uid] = {"name": name, "photo": photo}
-    emit("user_joined", {"uid": uid, "name": name, "photo": photo}, broadcast=True)
 
 @socketio.on("leave")
 def handle_leave(data):
@@ -73,6 +71,9 @@ def handle_leave(data):
     if uid in listeners:
         listeners.pop(uid)
         emit("user_left", {"uid": uid}, broadcast=True)
+
+
+
 
 if __name__ == "__main__":
     PORT = int(os.environ.get("PORT", 5050))
