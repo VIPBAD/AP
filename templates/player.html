@@ -24,8 +24,6 @@
     .queue-item img { width:48px; height:48px; border-radius:8px; }
     footer { position:fixed; bottom:0; left:0; right:0; background:#111; display:flex; justify-content:space-around; padding:12px 0; }
     footer a { text-decoration:none; color:#aaa; font-size:16px; }
-    .controls button { background:none; border:none; color:#fff; font-size:24px; margin:0 12px; cursor:pointer; }
-    .play-prim { width:70px; height:70px; border-radius:50%; font-size:28px; background:#6ea5ff; color:white; border:none; cursor:pointer; }
   </style>
 </head>
 <body>
@@ -55,9 +53,10 @@
     </div>
 
     <div class="controls">
-      <button onclick="rewind()">⏮</button>
+      <button class="ctrl" onclick="rewind()">⏮</button>
       <button id="playBtn" class="play-prim" onclick="togglePlay()">⏵</button>
-      <button onclick="forward()">⏭</button>
+      <button class="ctrl" onclick="forward()">⏭</button>
+      <button id="favBtn" class="fav-btn">❤️</button>
     </div>
 
     <div class="volume-row">
@@ -66,7 +65,7 @@
       <span id="volPercent">80%</span>
     </div>
 
-    <button class="queue-btn" onclick="openQueue()">🎶 Open Queue</button>
+    <button class="queue-btn" onclick="openQueue()">🎶 Open Favorites</button>
 
     <audio id="audio" preload="auto" src="{{ audio_url }}"></audio>
   </main>
@@ -74,7 +73,7 @@
   <!-- Queue Modal -->
   <div class="queue-modal" id="queueModal">
     <div class="queue-box">
-      <h3>Up Next</h3>
+      <h3>Favorite Songs</h3>
       <div id="queueList"></div>
       <button class="queue-btn" style="background:#444;" onclick="closeQueue()">Close</button>
     </div>
@@ -82,15 +81,18 @@
 
   <!-- Footer -->
   <footer>
-    <a href="/" class="nav-btn">🏠 Room</a>
-    <a href="/me?uid=guest" class="nav-btn">👤 Me</a>
-    <a href="/chat" class="nav-btn">💬 Chat</a>
+    <a href="/"><span>🏠 Room</span></a>
+    <a href="/me?uid=guest"><span>👤 Me</span></a>
   </footer>
 
   <!-- Scripts -->
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <script>
-    // --- Listeners ---
+    const tg = window.Telegram?.WebApp;
+    const user = tg?.initDataUnsafe?.user || { id: "guest", first_name: "Guest", photo_url: "https://via.placeholder.com/60" };
+
     async function loadListeners() {
       try {
         const res = await fetch("/listeners");
@@ -98,26 +100,25 @@
         document.getElementById("listenerCount").textContent = data.count;
         const row = document.getElementById("listenersRow");
         row.innerHTML = data.users.map(u => `<img src="${u.photo}" title="${u.name}">`).join('');
-      } catch(e){ console.warn("listeners error", e); }
+      } catch(e) { console.warn("listeners error", e); }
     }
     setInterval(loadListeners, 5000);
     loadListeners();
 
-    // --- Queue ---
     async function openQueue() {
-      const res = await fetch("/queue");
+      const res = await fetch(`/queue?uid=${user.id}`);
       const q = await res.json();
-      document.getElementById("queueList").innerHTML = q.map(it => `
+      document.getElementById("queueList").innerHTML = q.length ? q.map(it => `
         <div class="queue-item">
           <img src="${it.thumb}">
           <div>
             <div>${it.title}</div>
             <div style="color:#aaa;font-size:12px">${it.artist}</div>
           </div>
-        </div>`).join('');
+        </div>`).join('') : '<div>No favorite songs yet</div>';
       document.getElementById("queueModal").style.display="block";
     }
-    function closeQueue(){ document.getElementById("queueModal").style.display="none"; }
+    function closeQueue() { document.getElementById("queueModal").style.display="none"; }
   </script>
 </body>
 </html>
