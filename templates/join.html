@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Telegram Music</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     body {
       margin: 0;
       background: #0d0d0d;
-      font-family: Arial, sans-serif;
+      font-family: Inter, Arial, sans-serif;
       color: #fff;
       text-align: center;
     }
@@ -56,5 +57,6 @@
     <div class="title">🎶 BAD MUSIC</div>
     <a href="/" class="join-btn">Join Music</a>
   </main>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </body>
 </html>
