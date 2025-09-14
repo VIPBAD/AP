@@ -58,7 +58,7 @@
       top:0; left:0; right:0; bottom:0;
       border-radius:50%;
       padding:8px;
-      background:conic-gradient(#6ea5ff 0deg, #333 0deg 360deg);
+      background:conic-gradient(#6ea5ff 0deg, #a66bff 0deg, #ff6ea5 0deg, #333 0deg 360deg);
       display:flex;
       align-items:center;
       justify-content:center;
@@ -176,7 +176,7 @@
 
   <!-- Player -->
   <main class="player-screen">
-    <!-- Thumbnail with progress ring -->
+    <!-- Thumbnail with colorful progress ring -->
     <div class="album-wrap">
       <div class="album-ring" id="albumRing"></div>
       <img id="player-thumb" src="{{ thumb }}" alt="Album">
@@ -248,14 +248,12 @@
     const vol = document.getElementById("volume");
     const volPercent = document.getElementById("volPercent");
 
-    // Format time
     function fmtTime(sec) {
       const m = Math.floor(sec/60) || 0;
       const s = Math.floor(sec%60) || 0;
       return m + ":" + (s<10?"0":"") + s;
     }
 
-    // Audio events
     audio.addEventListener("loadedmetadata", () => {
       seek.max = Math.floor(audio.duration);
       total.textContent = fmtTime(audio.duration);
@@ -265,16 +263,16 @@
       seek.value = Math.floor(audio.currentTime);
       current.textContent = fmtTime(audio.currentTime);
 
-      // Smooth circular progress
+      // Colorful circular progress ring
       const progress = (audio.currentTime / audio.duration) * 360;
-      albumRing.style.background = `conic-gradient(#6ea5ff 0deg ${progress}deg, #333 ${progress}deg 360deg)`;
+      albumRing.style.background = `conic-gradient(#6ea5ff 0deg ${progress/3}deg, #a66bff ${progress/3}deg ${progress*2/3}deg, #ff6ea5 ${progress*2/3}deg ${progress}deg, #333 ${progress}deg 360deg)`;
     });
 
     seek.addEventListener("input", () => {
       audio.currentTime = seek.value;
     });
 
-    // Volume control with animated fill
+    // Volume control with gradient fill
     function updateVolumeUI() {
       const percent = vol.value * 100;
       volPercent.textContent = Math.round(percent) + "%";
@@ -289,7 +287,6 @@
       updateVolumeUI();
     });
 
-    // Load listeners
     async function loadListeners() {
       try {
         const res = await fetch("/listeners");
@@ -302,7 +299,6 @@
     setInterval(loadListeners, 5000);
     loadListeners();
 
-    // Profile Info Fill
     if (user) {
       document.getElementById("profile-pic").src = user.photo_url || "https://via.placeholder.com/60";
       document.getElementById("profile-name").innerText = user.first_name + (user.last_name ? " " + user.last_name : "");
