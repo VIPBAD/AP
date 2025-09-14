@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, render_template, jsonify, url_for, redirect
+from flask import Flask, request, render_template, jsonify, url_for
 from flask_socketio import SocketIO, emit
 import db
 
@@ -11,27 +11,16 @@ db.init_db()
 # In-memory listeners
 listeners = {}
 
-# ---------- ROUTES ----------
-
 @app.route("/")
 def home():
-    """Join Page"""
+    # If no audio URL is provided, show join.html
     audio_url = request.args.get("audio", "")
-    title = request.args.get("title", "Telegram Music")
+    if not audio_url:
+        return render_template("join.html")
+    title = request.args.get("title", "Now Playing")
     thumb = request.args.get("thumb", url_for('static', filename='img/default_album.png'))
-    avatar = request.args.get("avatar", url_for('static', filename='img/avatar.png'))
-    return render_template("join.html", audio_url=audio_url, title=title, thumb=thumb, avatar=avatar)
-
-
-@app.route("/player")
-def player():
-    """Player Page"""
-    audio_url = request.args.get("audio", "")
-    title = request.args.get("title", "Unknown Title")
-    thumb = request.args.get("thumb", url_for('static', filename='img/default_album.png'))
-    artist = request.args.get("artist", "YouTube")
+    artist = request.args.get("artist", "Unknown Artist")
     return render_template("player.html", audio_url=audio_url, title=title, thumb=thumb, artist=artist)
-
 
 @app.route("/me")
 def me():
@@ -39,11 +28,9 @@ def me():
     plays, favs = db.get_user_data(uid)
     return render_template("profile.html", uid=uid, plays=plays, favs=favs)
 
-
 @app.route("/listeners")
 def get_listeners():
     return jsonify({"count": len(listeners), "users": list(listeners.values())})
-
 
 @app.route("/play", methods=["POST"])
 def mark_play():
@@ -54,7 +41,6 @@ def mark_play():
         db.add_play(uid, song)
     return jsonify({"status": "ok"})
 
-
 @app.route("/favorite", methods=["POST"])
 def mark_fav():
     data = request.get_json()
@@ -64,14 +50,22 @@ def mark_fav():
         db.add_favorite(uid, song)
     return jsonify({"status": "ok"})
 
-
 @app.route("/queue")
 def get_queue():
-    q = db.get_queue()
-    return jsonify(q)
-
+    # Return favorite songs for the queue
+    uid = request.args.get("uid", "guest")
+    _, favs = db.get_user_data(uid)
+    return jsonify(favs)
 
 # ---------- SOCKET.IO EVENTS ----------
+
+@socketio.on("join")
+def handle_join(data):
+    uid = str(data.get("uid", "guest"))
+    name = data.get("name", "Unknown")
+    photo = data.get("photo", "https://via.placeholder.com/60")
+    listeners[uid] = {"name": name, "photo": photo}
+    emit("user_joined", {"uid": uid, "name": name, "photo": photo}, broadcast=True)
 
 @socketio.on("leave")
 def handle_leave(data):
@@ -79,9 +73,6 @@ def handle_leave(data):
     if uid in listeners:
         listeners.pop(uid)
         emit("user_left", {"uid": uid}, broadcast=True)
-
-
-# ---------- MAIN ----------
 
 if __name__ == "__main__":
     PORT = int(os.environ.get("PORT", 5050))
