@@ -51,7 +51,7 @@
     .stat { text-align: center; }
     .stat .num {
       font-weight: 700;
-      color: var(--accent, #6ea5ff);
+      color: #6ea5ff;
       font-size: 18px;
     }
     .stat .label {
@@ -118,7 +118,7 @@
     }
     footer .nav-btn {
       text-decoration: none;
-      color: var(--accent, #6ea5ff);
+      color: #6ea5ff;
       font-weight: 600;
     }
   </style>
@@ -197,20 +197,17 @@
   <footer>
     <a href="/" class="nav-btn">🏠 Room</a>
     <a href="/me?uid={{ uid }}" class="nav-btn">👤 Me</a>
-    <a href="/chat" class="nav-btn">💬 Chat</a>
   </footer>
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script>
-const tg = window.Telegram?.WebApp;
-const user = tg?.initDataUnsafe?.user;
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const tg = window.Telegram?.WebApp;
+    const user = tg?.initDataUnsafe?.user || { id: "{{ uid }}", first_name: "Guest", username: "No username", photo_url: "https://via.placeholder.com/72" };
 
-if (user) {
-  document.getElementById("profile-pic").src = user.photo_url || "https://via.placeholder.com/72";
-  document.getElementById("profile-name").innerText = user.first_name + (user.last_name ? " " + user.last_name : "");
-  document.getElementById("profile-username").innerText = "@" + (user.username || "No username");
-  document.getElementById("profile-id").innerText = user.id;
-}
-</script>
+    document.getElementById("profile-pic").src = user.photo_url || "https://via.placeholder.com/72";
+    document.getElementById("profile-name").innerText = user.first_name + (user.last_name ? " " + user.last_name : "");
+    document.getElementById("profile-username").innerText = "@" + (user.username || "No username");
+    document.getElementById("profile-id").innerText = user.id;
+  </script>
 </body>
-  </html>
+</html>
