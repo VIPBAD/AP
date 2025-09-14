@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: Inter, Arial, sans-serif;
   background: #0f1113;
   color: #fff;
   text-align: center;
@@ -37,6 +37,15 @@ body {
   background: #6ea5ff;
   color: white;
   border: none;
+  cursor: pointer;
+}
+.ctrl {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  margin: 0 12px;
+  cursor: pointer;
 }
 
 .volume-row {
@@ -44,4 +53,16 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
+}
+
+.fav-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+.fav-btn.active {
+  color: #ff6ea5;
 }
